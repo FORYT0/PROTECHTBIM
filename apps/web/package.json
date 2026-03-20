@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.28.0",
+    "axios": "^1.13.6",
     "date-fns": "^4.1.0",
     "gantt-task-react": "^0.3.9",
     "lucide-react": "^0.575.0",
@@ -23,7 +24,8 @@
     "react-router-dom": "^6.21.1",
     "recharts": "^3.7.0",
     "remark-gfm": "^4.0.1",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.5",

@@ -172,6 +172,7 @@ export default function BoardPage() {
           workPackage={selectedWorkPackage}
           isOpen={isDrawerOpen}
           onClose={handleDrawerClose}
+          onUpdate={handleWorkPackageUpdate}
         />
       )}
     </div>

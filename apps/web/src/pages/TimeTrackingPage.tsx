@@ -516,13 +516,13 @@ export const TimeTrackingPage: React.FC = () => {
                       strokeWidth="8"
                       fill="none"
                       strokeDasharray={`${2 * Math.PI * 56}`}
-                      strokeDashoffset={`${2 * Math.PI * 56 * (1 - mockLaborMetrics.utilization / 100)}`}
+                      strokeDashoffset={`${2 * Math.PI * 56 * (1 - laborMetrics.utilization / 100)}`}
                       strokeLinecap="round"
                       className="transition-all duration-500"
                     />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-white">{mockLaborMetrics.utilization}%</span>
+                    <span className="text-2xl font-bold text-white">{laborMetrics.utilization}%</span>
                   </div>
                 </div>
               </div>

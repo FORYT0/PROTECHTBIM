@@ -200,7 +200,7 @@ export const SprintPlanningPage: React.FC = () => {
                       <span className="px-2 py-1 bg-gray-100 rounded">
                         Priority: {wp.priority}
                       </span>
-                      {wp.assignee && <span>Assigned to: {wp.assignee.name}</span>}
+                      {wp.assignee_id && <span>Assigned to: {wp.assignee_id.substring(0, 8)}</span>}
                     </div>
                   </div>
                   <div className="ml-4 flex items-center gap-4">
