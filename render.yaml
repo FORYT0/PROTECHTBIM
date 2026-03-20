@@ -1,8 +1,7 @@
 services:
   - type: web
     name: protecht-bim-api
-    runtime: node
-    plan: free
+    env: node
     buildCommand: npm install && npx nx run api:build
     startCommand: node apps/api/dist/main.js
     envVars:
