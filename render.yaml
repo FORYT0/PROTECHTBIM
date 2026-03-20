@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: protecht-bim-api
+    env: node
+    plan: free
+    buildCommand: npm install && npx nx run api:build
+    startCommand: node apps/api/dist/main.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: WEBSOCKET_CORS_ORIGIN
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
