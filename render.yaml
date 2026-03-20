@@ -11,21 +11,23 @@ services:
       - key: PORT
         sync: false
       - key: DB_HOST
-        sync: false
+        value: db.rmqpdtrlmgjvkpibwwgr.supabase.co
       - key: DB_PORT
-        sync: false
+        value: "5432"
       - key: DB_NAME
-        sync: false
+        value: postgres
       - key: DB_USER
-        sync: false
+        value: postgres
       - key: DB_PASSWORD
-        sync: false
+        value: "[81K3JihcXgWGDBTE]"
       - key: REDIS_HOST
-        sync: false
+        value: still-goose-78774.upstash.io
       - key: REDIS_PORT
-        sync: false
+        value: "6379"
       - key: REDIS_PASSWORD
-        sync: false
+        value: gQAAAAAAATO2AAIncDE3ZjMzZGE3YWIyYmQ0MDljODQ4YzY4N2JkZWNkNzY0MHAxNzg3NzQ
+      - key: REDIS_TLS
+        value: "true"
       - key: GROQ_API_KEY
         sync: false
       - key: CORS_ORIGIN
