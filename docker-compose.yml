@@ -1,0 +1,148 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: protecht-bim-postgres
+    environment:
+      POSTGRES_DB: protecht_bim
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - '15432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - protecht-bim-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: protecht-bim-redis
+    command: redis-server
+    ports:
+      - '16379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - protecht-bim-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: protecht-bim-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - protecht-bim-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: protecht-bim-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - '15672:5672'
+      - '25672:15672'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - protecht-bim-network
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: protecht-bim-api
+    environment:
+      # Database Configuration
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: protecht_bim
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgres123
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 'redis123'
+      REDIS_DB: 0
+      # JWT Configuration
+      JWT_SECRET: dev-secret-key-change-in-production
+      JWT_EXPIRES_IN: 3600
+      JWT_REFRESH_EXPIRES_IN: 604800
+      # Session Configuration
+      SESSION_SECRET: dev-session-secret-change-in-production
+      SESSION_TTL: 86400
+      # MinIO/S3 Configuration
+      STORAGE_ENDPOINT: minio:9000
+      STORAGE_ACCESS_KEY: minioadmin
+      STORAGE_SECRET_KEY: minioadmin
+      STORAGE_BUCKET: protecht-bim
+      STORAGE_USE_SSL: 'false'
+      # RabbitMQ Configuration
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      # Application Configuration
+      NODE_ENV: development
+      API_PORT: 3000
+      CORS_ORIGIN: http://localhost:8081,http://localhost:3001,http://localhost:5173
+      LOG_LEVEL: debug
+    ports:
+      - '3000:3000'
+    volumes:
+      # Mount source code for hot-reload
+      - ./apps/api/src:/app/apps/api/src
+      - ./libs:/app/libs
+      # Prevent overwriting node_modules
+      - /app/node_modules
+      - /app/apps/api/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - protecht-bim-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:
+  rabbitmq_data:
+
+networks:
+  protecht-bim-network:
+    driver: bridge

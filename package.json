@@ -1,0 +1,40 @@
+{
+  "name": "protecht-bim",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PROTECHT BIM - Construction Project Management Platform with BIM Integration",
+  "workspaces": [
+    "apps/*",
+    "libs/*",
+    "tools/*"
+  ],
+  "scripts": {
+    "dev": "nx run-many --target=dev --all",
+    "build": "nx run-many --target=build --all",
+    "test": "nx run-many --target=test --all",
+    "lint": "nx run-many --target=lint --all",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "dependencies": {
+    "groq-sdk": "^1.1.1",
+    "tslib": "^2.6.2",
+    "zustand": "^5.0.12"
+  },
+  "devDependencies": {
+    "@nx/jest": "^22.5.1",
+    "@nx/workspace": "^17.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "nx": "^17.2.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

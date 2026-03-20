@@ -1,0 +1,297 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+
+    color-scheme: dark;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    background-color: #000000;
+  }
+
+  body {
+    margin: 0;
+    background-color: #000000;
+    color: #FFFFFF;
+    min-width: 320px;
+    min-height: 100vh;
+  }
+
+  #root {
+    width: 100%;
+    min-height: 100vh;
+    background-color: #000000;
+  }
+
+  /* Scrollbar styling for dark theme */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: #000000;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #1A1A1A;
+    border-radius: 0.5rem;
+    border: 1px solid #333333;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #4a4a4a;
+  }
+
+  /* Selection styling */
+  ::selection {
+    background-color: #1976D2;
+    color: #FFFFFF;
+  }
+}
+
+@layer components {
+
+  /* Material Design elevation classes */
+  .elevation-0 {
+    box-shadow: none;
+  }
+
+  .elevation-1 {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  }
+
+  .elevation-2 {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  }
+
+  .elevation-3 {
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  }
+
+  .elevation-4 {
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  }
+
+  .elevation-5 {
+    box-shadow: 0 19px 38px rgba(0, 0, 0, 0.30), 0 15px 12px rgba(0, 0, 0, 0.22);
+  }
+
+  /* Material button styles */
+  .btn-primary {
+    @apply px-6 py-3 rounded-lg font-medium text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: #1E88E5;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: #1976D2;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  }
+
+  .btn-primary:active:not(:disabled) {
+    background-color: #1565C0;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: #0A0A0A;
+    color: #FFFFFF;
+    border: 1px solid #1A1A1A;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: #121212;
+    border-color: #333333;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  .btn-secondary:active:not(:disabled) {
+    background-color: #333333;
+  }
+
+  .btn-text {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    color: #2196F3;
+  }
+
+  .btn-text:hover:not(:disabled) {
+    background-color: rgba(33, 150, 243, 0.1);
+  }
+
+  .btn-text:active:not(:disabled) {
+    background-color: rgba(33, 150, 243, 0.2);
+  }
+
+  /* Material card styles */
+  .card {
+    @apply rounded-xl p-6 transition-shadow duration-200;
+    background-color: #0A0A0A;
+    /* Pure black / very dark */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+    border: 1px solid #1A1A1A;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Material input styles */
+  .input-material {
+    @apply w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200;
+    background-color: #0A0A0A;
+    color: #FFFFFF;
+    border: 1px solid #1A1A1A;
+  }
+
+  .input-material::placeholder {
+    color: #666666;
+  }
+
+  .input-material:focus {
+    border-color: transparent;
+    ring-color: #1E88E5;
+  }
+
+  .input-material:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Material surface styles */
+  .surface-primary {
+    background-color: #121212;
+  }
+
+  .surface-secondary {
+    background-color: #1E1E1E;
+  }
+
+  .surface-tertiary {
+    background-color: #2C2C2C;
+  }
+
+  .surface-elevated {
+    background-color: #383838;
+  }
+}
+
+@layer utilities {
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 0.3s ease-out;
+  }
+
+  .animate-slide-in-up {
+    animation: slideInUp 0.3s ease-out;
+  }
+
+  .animate-slide-in-down {
+    animation: slideInDown 0.3s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+    }
+
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInUp {
+    from {
+      transform: translateY(100%);
+    }
+
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInDown {
+    from {
+      transform: translateY(-100%);
+    }
+
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* AI Assistant Animations */
+  .animate-typewriter {
+    overflow: hidden;
+    white-space: pre-wrap;
+    animation: typing 0.01s steps(40, end);
+  }
+
+  .ai-glass {
+    background: rgba(10, 10, 10, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .animate-ai-pulse {
+    animation: aiPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    box-shadow: 0 0 0 0 rgba(30, 136, 229, 0.4);
+  }
+
+  @keyframes typing {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes aiPulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(30, 136, 229, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(30, 136, 229, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(30, 136, 229, 0);
+    }
+  }
+}

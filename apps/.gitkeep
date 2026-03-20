@@ -1,0 +1,4 @@
+# This directory will contain application packages
+# - api: Backend API service
+# - web: Frontend React application
+# - bim-processor: BIM processing service

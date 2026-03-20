@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Connection Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-section.error {
+            border-left-color: #f44336;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+        h1 { color: #4CAF50; }
+        h2 { color: #2196F3; margin-top: 0; }
+    </style>
+</head>
+<body>
+    <h1>🔧 API Connection Diagnostic Tool</h1>
+    <p>This page tests the API connection directly from your browser.</p>
+
+    <div class="test-section">
+        <h2>Test 1: Health Endpoint</h2>
+        <button onclick="testHealth()">Test /health</button>
+        <div id="health-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: API v1 Endpoint</h2>
+        <button onclick="testApiV1()">Test /api/v1</button>
+        <div id="apiv1-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Contracts Endpoint (No Auth)</h2>
+        <button onclick="testContracts()">Test GET /api/v1/contracts</button>
+        <div id="contracts-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Create Contract (With Auth)</h2>
+        <p>First, paste your auth token here:</p>
+        <input type="text" id="auth-token" placeholder="Paste token from localStorage" style="width: 100%; padding: 8px; background: #1a1a1a; color: #fff; border: 1px solid #444; border-radius: 4px;">
+        <button onclick="testCreateContract()">Test POST /api/v1/contracts</button>
+        <div id="create-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+<span class="success">✓ Success!</span>
+Status: ${response.status}
+Response:
+${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Failed!</span>
+Error: ${error.message}`;
+            }
+        }
+
+        async function testApiV1() {
+            const resultDiv = document.getElementById('apiv1-result');
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+<span class="success">✓ Success!</span>
+Status: ${response.status}
+Response:
+${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Failed!</span>
+Error: ${error.message}`;
+            }
+        }
+
+        async function testContracts() {
+            const resultDiv = document.getElementById('contracts-result');
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/contracts`);
+                const text = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    data = text;
+                }
+                
+                resultDiv.innerHTML = `
+<span class="${response.ok ? 'success' : 'error'}">${response.ok ? '✓' : '✗'} Response received</span>
+Status: ${response.status} ${response.statusText}
+Response:
+${typeof data === 'object' ? JSON.stringify(data, null, 2) : data}`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Failed!</span>
+Error: ${error.message}
+Type: ${error.constructor.name}
+
+This usually means:
+- API server is not running
+- CORS is blocking the request
+- Network connectivity issue`;
+            }
+        }
+
+        async function testCreateContract() {
+            const resultDiv = document.getElementById('create-result');
+            const token = document.getElementById('auth-token').value.trim();
+            
+            if (!token) {
+                resultDiv.innerHTML = '<span class="error">Please enter an auth token first!</span>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<span class="info">Testing...</span>';
+            
+            const testData = {
+                projectId: 'test-project-id',
+                contractNumber: 'TEST-001',
+                contractType: 'LUMP_SUM',
+                clientName: 'Test Client',
+                originalContractValue: 100000,
+                startDate: new Date().toISOString(),
+                endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/contracts`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const text = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch {
+                    data = text;
+                }
+                
+                resultDiv.innerHTML = `
+<span class="${response.ok ? 'success' : 'error'}">${response.ok ? '✓' : '✗'} Response received</span>
+Status: ${response.status} ${response.statusText}
+Request Data:
+${JSON.stringify(testData, null, 2)}
+
+Response:
+${typeof data === 'object' ? JSON.stringify(data, null, 2) : data}`;
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error">✗ Failed!</span>
+Error: ${error.message}
+Type: ${error.constructor.name}`;
+            }
+        }
+
+        // Auto-load token from localStorage if available
+        window.addEventListener('load', () => {
+            try {
+                const tokens = localStorage.getItem('auth_tokens');
+                if (tokens) {
+                    const parsed = JSON.parse(tokens);
+                    if (parsed.accessToken) {
+                        document.getElementById('auth-token').value = parsed.accessToken;
+                    }
+                }
+            } catch (e) {
+                console.log('Could not load token from localStorage');
+            }
+        });
+    </script>
+</body>
+</html>

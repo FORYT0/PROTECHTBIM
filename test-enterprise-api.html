@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Enterprise API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .result {
+            background: #1a1a1a;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        input, select {
+            background: #1a1a1a;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Enterprise API Test Suite</h1>
+    <p>Test the enterprise module endpoints (Contracts, Change Orders, Daily Reports, Snags)</p>
+
+    <div class="test-section">
+        <h2>1. Check API Health</h2>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <div id="health-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Authentication</h2>
+        <input type="text" id="username" placeholder="Username" value="admin">
+        <input type="password" id="password" placeholder="Password" value="admin123">
+        <button onclick="testLogin()">Login</button>
+        <div id="auth-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. List Projects</h2>
+        <button onclick="listProjects()">Get Projects</button>
+        <div id="projects-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Create Contract</h2>
+        <select id="project-select">
+            <option value="">Select a project first</option>
+        </select>
+        <button onclick="createContract()">Create Test Contract</button>
+        <div id="contract-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Create Change Order</h2>
+        <button onclick="createChangeOrder()">Create Test Change Order</button>
+        <div id="change-order-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>6. Create Daily Report</h2>
+        <button onclick="createDailyReport()">Create Test Daily Report</button>
+        <div id="daily-report-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>7. Create Snag</h2>
+        <button onclick="createSnag()">Create Test Snag</button>
+        <div id="snag-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080/api/v1';
+        let authToken = null;
+        let selectedProjectId = null;
+        let contractId = null;
+
+        function log(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = isError ? 'result error' : 'result success';
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_URL.replace('/api/v1', '')}/health`);
+                const data = await response.json();
+                log('health-result', `✅ API is healthy!\n${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log('health-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Login failed');
+                }
+
+                const data = await response.json();
+                authToken = data.accessToken;
+                log('auth-result', `✅ Login successful!\nToken: ${authToken.substring(0, 50)}...`);
+            } catch (error) {
+                log('auth-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function listProjects() {
+            if (!authToken) {
+                log('projects-result', '❌ Please login first', true);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/projects`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch projects');
+
+                const data = await response.json();
+                const projects = data.projects || [];
+                
+                // Populate project selector
+                const select = document.getElementById('project-select');
+                select.innerHTML = '<option value="">Select a project</option>';
+                projects.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = p.name;
+                    select.appendChild(option);
+                });
+
+                if (projects.length > 0) {
+                    selectedProjectId = projects[0].id;
+                    select.value = selectedProjectId;
+                }
+
+                log('projects-result', `✅ Found ${projects.length} projects\n${JSON.stringify(projects, null, 2)}`);
+            } catch (error) {
+                log('projects-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function createContract() {
+            if (!authToken) {
+                log('contract-result', '❌ Please login first', true);
+                return;
+            }
+
+            const projectId = document.getElementById('project-select').value;
+            if (!projectId) {
+                log('contract-result', '❌ Please select a project first', true);
+                return;
+            }
+
+            const contractData = {
+                projectId: projectId,
+                contractNumber: `CNT-TEST-${Date.now()}`,
+                contractType: 'LUMP_SUM',
+                clientName: 'Test Client Corp',
+                originalContractValue: 1000000,
+                originalDurationDays: 365,
+                startDate: '2026-01-01',
+                completionDate: '2026-12-31',
+                retentionPercentage: 10,
+                advancePaymentAmount: 100000,
+                performanceBondValue: 50000,
+                currency: 'USD',
+                description: 'Test contract created via API test',
+                terms: 'Standard terms and conditions'
+            };
+
+            try {
+                console.log('Creating contract:', contractData);
+                const response = await fetch(`${API_URL}/contracts`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(contractData)
+                });
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create contract');
+                }
+
+                contractId = data.contract.id;
+                log('contract-result', `✅ Contract created!\n${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                console.error('Error creating contract:', error);
+                log('contract-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function createChangeOrder() {
+            if (!authToken) {
+                log('change-order-result', '❌ Please login first', true);
+                return;
+            }
+
+            const projectId = document.getElementById('project-select').value;
+            if (!projectId) {
+                log('change-order-result', '❌ Please select a project first', true);
+                return;
+            }
+
+            if (!contractId) {
+                log('change-order-result', '❌ Please create a contract first', true);
+                return;
+            }
+
+            const changeOrderData = {
+                projectId: projectId,
+                contractId: contractId,
+                title: 'Test Change Order',
+                description: 'Additional work required',
+                reason: 'CLIENT_CHANGE',
+                costImpact: 50000,
+                scheduleImpactDays: 30,
+                priority: 'MEDIUM',
+                notes: 'Test change order',
+                costLines: []
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/change-orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(changeOrderData)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create change order');
+                }
+
+                log('change-order-result', `✅ Change order created!\n${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log('change-order-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function createDailyReport() {
+            if (!authToken) {
+                log('daily-report-result', '❌ Please login first', true);
+                return;
+            }
+
+            const projectId = document.getElementById('project-select').value;
+            if (!projectId) {
+                log('daily-report-result', '❌ Please select a project first', true);
+                return;
+            }
+
+            const reportData = {
+                projectId: projectId,
+                reportDate: new Date().toISOString().split('T')[0],
+                weather: 'Clear',
+                temperature: 25,
+                manpowerCount: 50,
+                equipmentCount: 10,
+                workCompleted: 'Foundation work completed',
+                workPlannedTomorrow: 'Start steel erection',
+                delays: '',
+                safetyIncidents: '',
+                siteNotes: 'Good progress today'
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/daily-reports`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(reportData)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create daily report');
+                }
+
+                log('daily-report-result', `✅ Daily report created!\n${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log('daily-report-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+
+        async function createSnag() {
+            if (!authToken) {
+                log('snag-result', '❌ Please login first', true);
+                return;
+            }
+
+            const projectId = document.getElementById('project-select').value;
+            if (!projectId) {
+                log('snag-result', '❌ Please select a project first', true);
+                return;
+            }
+
+            const snagData = {
+                projectId: projectId,
+                location: 'Level 3, Grid A-5',
+                description: 'Paint finish not acceptable',
+                severity: 'MINOR',
+                category: 'QUALITY',
+                costImpact: 500
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/snags`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(snagData)
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to create snag');
+                }
+
+                log('snag-result', `✅ Snag created!\n${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                log('snag-result', `❌ Error: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+/* Custom styles for Gantt chart */
+.gantt-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Override default gantt-task-react styles to match our theme */
+.gantt-container .gantt {
+  font-family: inherit;
+}
+
+.gantt-container .gantt-table {
+  border-right: 1px solid #e5e7eb;
+}
+
+.gantt-container .gantt-table-header {
+  background-color: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.gantt-container .gantt-table-row {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.gantt-container .gantt-table-row:hover {
+  background-color: #f9fafb;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .gantt-container .gantt-table {
+    border-right-color: #374151;
+  }
+
+  .gantt-container .gantt-table-header {
+    background-color: #1f2937;
+    border-bottom-color: #374151;
+  }
+
+  .gantt-container .gantt-table-row {
+    border-bottom-color: #374151;
+  }
+
+  .gantt-container .gantt-table-row:hover {
+    background-color: #1f2937;
+  }
+}

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple Form Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #1a1a1a; color: #fff; }
+        button { padding: 10px 20px; margin: 10px; font-size: 16px; cursor: pointer; }
+        .output { background: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+    </style>
+</head>
+<body>
+    <h1>Simple Contract Creation Test</h1>
+    
+    <div>
+        <label>Project ID:</label>
+        <input type="text" id="projectId" value="test-project-123" style="width: 300px; padding: 5px;">
+    </div>
+    
+    <div>
+        <label>Contract Number:</label>
+        <input type="text" id="contractNumber" value="TEST-001" style="width: 300px; padding: 5px;">
+    </div>
+    
+    <div>
+        <label>Client Name:</label>
+        <input type="text" id="clientName" value="Test Client" style="width: 300px; padding: 5px;">
+    </div>
+    
+    <button onclick="testCreate()">Create Contract</button>
+    <button onclick="testHealth()">Test API Health</button>
+    
+    <div id="output" class="output"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/v1';
+        
+        function log(message, isError = false) {
+            const output = document.getElementById('output');
+            const className = isError ? 'error' : 'success';
+            output.innerHTML += `<div class="${className}">${message}</div>`;
+            console.log(message);
+        }
+        
+        async function testHealth() {
+            document.getElementById('output').innerHTML = '';
+            log('Testing API health...');
+            
+            try {
+                const response = await fetch('http://localhost:8080/health');
+                const data = await response.json();
+                log('✓ API is responding: ' + JSON.stringify(data));
+            } catch (error) {
+                log('✗ API health check failed: ' + error.message, true);
+            }
+        }
+        
+        async function testCreate() {
+            document.getElementById('output').innerHTML = '';
+            log('Starting contract creation test...');
+            
+            const projectId = document.getElementById('projectId').value;
+            const contractNumber = document.getElementById('contractNumber').value;
+            const clientName = document.getElementById('clientName').value;
+            
+            const contractData = {
+                projectId: projectId,
+                contractNumber: contractNumber,
+                contractType: 'LUMP_SUM',
+                clientName: clientName,
+                originalContractValue: 100000,
+                originalDurationDays: 90,
+                startDate: new Date().toISOString(),
+                endDate: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
+                retentionPercentage: 10,
+                advancePaymentAmount: 10000,
+                performanceBondValue: 5000,
+                currency: 'USD',
+                description: 'Test contract',
+                terms: 'Test terms'
+            };
+            
+            log('Contract data: ' + JSON.stringify(contractData, null, 2));
+            
+            try {
+                log('Sending request to: ' + API_BASE + '/contracts');
+                
+                const response = await fetch(API_BASE + '/contracts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(contractData)
+                });
+                
+                log('Response status: ' + response.status + ' ' + response.statusText);
+                
+                const responseText = await response.text();
+                log('Response body: ' + responseText);
+                
+                if (response.ok) {
+                    log('✓ Contract created successfully!');
+                } else {
+                    log('✗ Failed to create contract', true);
+                }
+            } catch (error) {
+                log('✗ Error: ' + error.message, true);
+                log('Error details: ' + JSON.stringify(error), true);
+            }
+        }
+    </script>
+</body>
+</html>

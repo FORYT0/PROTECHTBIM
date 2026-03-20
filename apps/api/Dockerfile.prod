@@ -1,0 +1,78 @@
+# Production Dockerfile for PROTECHT BIM API
+FROM node:20-alpine AS builder
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY apps/api/package*.json ./apps/api/
+COPY libs/shared-types/package*.json ./libs/shared-types/
+COPY libs/shared-utils/package*.json ./libs/shared-utils/
+COPY tsconfig.base.json ./
+
+# Install all dependencies (including dev dependencies for build)
+RUN npm ci
+
+# Copy source code
+COPY . .
+
+# Create production package.json files for libraries
+RUN echo '{"name":"@protecht-bim/shared-types","version":"0.1.0","main":"./src/index.js","types":"./src/index.d.ts","private":true}' > /tmp/shared-types-pkg.json && \
+    echo '{"name":"@protecht-bim/shared-utils","version":"0.1.0","main":"./src/index.js","types":"./src/index.d.ts","private":true,"dependencies":{"bcrypt":"^5.1.1"}}' > /tmp/shared-utils-pkg.json
+
+# Build TypeScript (libraries first, then API)
+RUN npx nx run shared-types:build && \
+    npx nx run shared-utils:build && \
+    cd apps/api && npm run build
+
+# Copy production package.json files to dist folders
+RUN cp /tmp/shared-types-pkg.json dist/libs/shared-types/package.json && \
+    cp /tmp/shared-utils-pkg.json dist/libs/shared-utils/package.json
+
+# Production stage
+FROM node:20-alpine
+
+# Install runtime dependencies only
+RUN apk add --no-cache python3 make g++
+
+WORKDIR /app
+
+# Copy root package.json
+COPY package*.json ./
+
+# Set up library structure with built code and package.json
+COPY --from=builder /app/dist/libs/shared-types ./libs/shared-types
+COPY --from=builder /app/dist/libs/shared-utils ./libs/shared-utils
+
+# Copy API package.json and built code
+COPY apps/api/package*.json ./apps/api/
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+
+# Install production dependencies (this will link the local workspace packages)
+RUN npm ci --only=production
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Change ownership
+RUN chown -R nodejs:nodejs /app
+
+# Switch to non-root user
+USER nodejs
+
+# Expose API port
+EXPOSE 3000
+
+# Set environment to production
+ENV NODE_ENV=production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Start the API
+CMD ["node", "apps/api/dist/main.js"]
