@@ -1,7 +1,7 @@
 import { Groq } from 'groq-sdk';
 
 export class AIService {
-  private groq: Groq;
+  private groq!: Groq;
   private isAvailable: boolean = false;
 
   constructor() {

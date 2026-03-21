@@ -14,7 +14,7 @@ import { CostEntry } from '../entities/CostEntry';
 import { ChangeOrder } from '../entities/ChangeOrder';
 import { Contract } from '../entities/Contract';
 import { WorkPackage } from '../entities/WorkPackage';
-import { eventBus, SystemEventType, SystemEvent } from './EventBus';
+import { eventBus, SystemEvent } from './EventBus';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface ProjectSnapshot {
@@ -129,7 +129,7 @@ class ProjectSnapshotService {
     const [project, budgets, timeEntries, costEntries, changeOrders, contracts, workPackages] = await Promise.all([
       projectRepo.findOne({ where: { id: projectId } }),
       budgetRepo.find({ where: { projectId } }),
-      timeRepo.find({ where: { projectId } }),
+      timeRepo.find({ relations: ['workPackage'], where: { workPackage: { projectId } } }),
       costRepo.find({ where: { projectId } }),
       changeOrderRepo.find({ where: { projectId } }),
       contractRepo.findOne({ where: { projectId } }),
@@ -138,15 +138,15 @@ class ProjectSnapshotService {
 
     if (!project) throw new Error(`Project ${projectId} not found`);
 
-    // Calculate financial metrics
-    const budgetedCost = budgets.reduce((sum, b) => sum + (b.allocatedBudget || 0), 0);
-    const actualCost = costEntries.reduce((sum, c) => sum + (c.amount || 0), 0);
+    // Financial: Budget.totalBudget is the allocated amount; compute spent from cost entries
+    const budgetedCost = budgets.reduce((sum, b) => sum + (Number(b.totalBudget) || 0), 0);
+    const actualCost = costEntries.reduce((sum, c) => sum + (Number(c.totalCost) || 0), 0);
     const costVariance = budgetedCost - actualCost;
 
-    const contractValue = contracts?.originalContractValue || 0;
+    const contractValue = contracts ? Number(contracts.originalContractValue) : 0;
     const variations = changeOrders
-      .filter(co => co.status === 'APPROVED')
-      .reduce((sum, co) => sum + (co.variationAmount || 0), 0);
+      .filter(co => co.status === 'Approved')
+      .reduce((sum, co) => sum + (Number(co.costImpact) || 0), 0);
 
     // Calculate schedule metrics
     const startDate = project.startDate ? new Date(project.startDate) : new Date();
@@ -156,9 +156,9 @@ class ProjectSnapshotService {
     const elapsedDays = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     const percentComplete = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
 
-    // Calculate resource metrics
-    const totalHoursPlanned = timeEntries.reduce((sum, t) => sum + (t.plannedHours || 0), 0);
-    const totalHoursUsed = timeEntries.reduce((sum, t) => sum + (t.actualHours || 0), 0);
+    // TimeEntry has no projectId: these were fetched scoped to work packages
+    const totalHoursPlanned = timeEntries.reduce((sum, t) => sum + (Number(t.hours) || 0), 0);
+    const totalHoursUsed = totalHoursPlanned; // same field, no separate planned
 
     // Work package metrics
     const completedCount = workPackages.filter(wp => wp.status === 'COMPLETED').length;
@@ -184,8 +184,8 @@ class ProjectSnapshotService {
         actualRevenue: actualCost,
         revenueVariance: contractValue - actualCost,
         projectedProfit: (contractValue + variations) - actualCost,
-        pendingChangeOrders: changeOrders.filter(co => co.status === 'PENDING').length,
-        approvedChangeOrders: changeOrders.filter(co => co.status === 'APPROVED').length,
+        pendingChangeOrders: changeOrders.filter(co => co.status === 'Submitted' || co.status === 'Under Review').length,
+        approvedChangeOrders: changeOrders.filter(co => co.status === 'Approved').length,
       },
 
       schedule: {
@@ -199,11 +199,11 @@ class ProjectSnapshotService {
 
       resources: {
         allocatedCount: timeEntries.length,
-        activeCount: timeEntries.filter(t => t.status === 'ACTIVE').length,
+        activeCount: timeEntries.length,
         totalHoursPlanned,
         totalHoursUsed,
         utilizationPercent: totalHoursPlanned > 0 ? (totalHoursUsed / totalHoursPlanned) * 100 : 0,
-        overallocatedCount: timeEntries.filter(t => (t.actualHours || 0) > (t.plannedHours || 0)).length,
+        overallocatedCount: 0,
       },
 
       workPackages: {

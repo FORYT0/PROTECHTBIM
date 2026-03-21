@@ -2,14 +2,14 @@ import { Router, Request, Response } from 'express';
 import { authenticateToken, createAuthService } from '../middleware/auth.middleware';
 import { TimeEntryRepository } from '../repositories/TimeEntryRepository';
 import { CostEntryRepository } from '../repositories/CostEntryRepository';
-import { WorkPackageRepository } from '../repositories/WorkPackageRepository';
-import { CostType } from '../entities/CostEntry';
+import { AppDataSource } from '../config/data-source';
+import { WorkPackage } from '../entities/WorkPackage';
+import { CostCategory } from '../entities/CostEntry';
 
 export const createProjectAnalyticsRouter = (): Router => {
   const router = Router();
   const timeEntryRepository = new TimeEntryRepository();
   const costEntryRepository = new CostEntryRepository();
-  const workPackageRepository = new WorkPackageRepository();
   const authService = createAuthService();
   const authenticate = authenticateToken(authService);
 
@@ -30,7 +30,7 @@ export const createProjectAnalyticsRouter = (): Router => {
       }
 
       // Get all work packages for the project
-      const workPackages = await workPackageRepository.findByProject(projectId);
+      const workPackages = await AppDataSource.getRepository(WorkPackage).find({ where: { projectId } });
       const workPackageIds = workPackages.map(wp => wp.id);
 
       if (workPackageIds.length === 0) {
@@ -137,7 +137,7 @@ export const createProjectAnalyticsRouter = (): Router => {
       }
 
       // Get all work packages for the project
-      const workPackages = await workPackageRepository.findByProject(projectId);
+      const workPackages = await AppDataSource.getRepository(WorkPackage).find({ where: { projectId } });
       const workPackageIds = workPackages.map(wp => wp.id);
 
       if (workPackageIds.length === 0) {
@@ -160,24 +160,24 @@ export const createProjectAnalyticsRouter = (): Router => {
         perPage: 10000,
       });
 
-      // Calculate totals
-      const totalCost = costEntries.costEntries.reduce((sum, ce) => sum + parseFloat(ce.amount.toString()), 0);
+      // Calculate totals using correct field names: totalCost, isBillable, costCategory, entryDate
+      const totalCost = costEntries.costEntries.reduce((sum, ce) => sum + parseFloat(ce.totalCost.toString()), 0);
       const billableCost = costEntries.costEntries
-        .filter(ce => ce.billable)
-        .reduce((sum, ce) => sum + parseFloat(ce.amount.toString()), 0);
+        .filter(ce => ce.isBillable)
+        .reduce((sum, ce) => sum + parseFloat(ce.totalCost.toString()), 0);
       const nonBillableCost = totalCost - billableCost;
 
-      // Group by type
-      const typeMap = new Map<CostType, number>();
+      // Group by category
+      const typeMap = new Map<CostCategory, number>();
       costEntries.costEntries.forEach(ce => {
-        typeMap.set(ce.type, (typeMap.get(ce.type) || 0) + parseFloat(ce.amount.toString()));
+        typeMap.set(ce.costCategory, (typeMap.get(ce.costCategory) || 0) + parseFloat(ce.totalCost.toString()));
       });
       const byType = Array.from(typeMap.entries()).map(([type, amount]) => ({ type, amount }));
 
       // Group by work package
       const byWorkPackage = workPackages.map(wp => {
         const wpEntries = costEntries.costEntries.filter(ce => ce.workPackageId === wp.id);
-        const amount = wpEntries.reduce((sum, ce) => sum + parseFloat(ce.amount.toString()), 0);
+        const amount = wpEntries.reduce((sum, ce) => sum + parseFloat(ce.totalCost.toString()), 0);
         return {
           work_package_id: wp.id,
           work_package_subject: wp.subject,
@@ -191,8 +191,8 @@ export const createProjectAnalyticsRouter = (): Router => {
       if (group_by === 'date') {
         const dateMap = new Map<string, number>();
         costEntries.costEntries.forEach(ce => {
-          const dateKey = new Date(ce.date).toISOString().split('T')[0];
-          dateMap.set(dateKey, (dateMap.get(dateKey) || 0) + parseFloat(ce.amount.toString()));
+          const dateKey = new Date(ce.entryDate).toISOString().split('T')[0];
+          dateMap.set(dateKey, (dateMap.get(dateKey) || 0) + parseFloat(ce.totalCost.toString()));
         });
         byDate = Array.from(dateMap.entries())
           .map(([date, amount]) => ({ date, amount }))
@@ -225,7 +225,7 @@ export const createProjectAnalyticsRouter = (): Router => {
       const { projectId } = req.params;
 
       // Get all work packages for the project
-      const workPackages = await workPackageRepository.findByProject(projectId);
+      const workPackages = await AppDataSource.getRepository(WorkPackage).find({ where: { projectId } });
       const workPackageIds = workPackages.map(wp => wp.id);
 
       if (workPackageIds.length === 0) {
@@ -252,7 +252,7 @@ export const createProjectAnalyticsRouter = (): Router => {
       });
 
       const totalHours = timeEntries.timeEntries.reduce((sum, te) => sum + parseFloat(te.hours.toString()), 0);
-      const totalCost = costEntries.costEntries.reduce((sum, ce) => sum + parseFloat(ce.amount.toString()), 0);
+      const totalCost = costEntries.costEntries.reduce((sum, ce) => sum + parseFloat(ce.totalCost.toString()), 0);
 
       return res.status(200).json({
         project_id: projectId,
