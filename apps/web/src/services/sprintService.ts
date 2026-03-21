@@ -1,4 +1,4 @@
-import api from '../utils/api';
+import { apiRequest } from '../utils/api';
 import {
   Sprint,
   CreateSprintRequest,
@@ -12,6 +12,7 @@ import {
 
 /**
  * Sprint service for managing sprints and sprint planning
+ * Uses the project's native fetch-based apiRequest utility.
  */
 
 export const sprintService = {
@@ -22,11 +23,12 @@ export const sprintService = {
     projectId: string,
     data: CreateSprintRequest
   ): Promise<Sprint> {
-    const response = await api.post<CreateSprintResponse>(
-      `/projects/${projectId}/sprints`,
-      data
-    );
-    return response.data.sprint;
+    const response = await apiRequest(`/projects/${projectId}/sprints`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    const json: CreateSprintResponse = await response.json();
+    return json.sprint;
   },
 
   /**
@@ -36,19 +38,17 @@ export const sprintService = {
     projectId: string,
     params?: ListSprintsRequest
   ): Promise<ListSprintsResponse> {
-    const response = await api.get<ListSprintsResponse>(
-      `/projects/${projectId}/sprints`,
-      { params }
-    );
-    return response.data;
+    const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
+    const response = await apiRequest(`/projects/${projectId}/sprints${query}`);
+    return response.json() as Promise<ListSprintsResponse>;
   },
 
   /**
    * Get a sprint with work packages and stats
    */
   async getSprint(sprintId: string): Promise<GetSprintResponse> {
-    const response = await api.get<GetSprintResponse>(`/sprints/${sprintId}`);
-    return response.data;
+    const response = await apiRequest(`/sprints/${sprintId}`);
+    return response.json() as Promise<GetSprintResponse>;
   },
 
   /**
@@ -58,18 +58,19 @@ export const sprintService = {
     sprintId: string,
     data: UpdateSprintRequest
   ): Promise<Sprint> {
-    const response = await api.patch<UpdateSprintResponse>(
-      `/sprints/${sprintId}`,
-      data
-    );
-    return response.data.sprint;
+    const response = await apiRequest(`/sprints/${sprintId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    const json: UpdateSprintResponse = await response.json();
+    return json.sprint;
   },
 
   /**
    * Delete a sprint
    */
   async deleteSprint(sprintId: string): Promise<void> {
-    await api.delete(`/sprints/${sprintId}`);
+    await apiRequest(`/sprints/${sprintId}`, { method: 'DELETE' });
   },
 
   /**
@@ -79,8 +80,9 @@ export const sprintService = {
     sprintId: string,
     workPackageIds: string[]
   ): Promise<void> {
-    await api.post(`/sprints/${sprintId}/work-packages`, {
-      work_package_ids: workPackageIds,
+    await apiRequest(`/sprints/${sprintId}/work-packages`, {
+      method: 'POST',
+      body: JSON.stringify({ work_package_ids: workPackageIds }),
     });
   },
 
@@ -88,8 +90,9 @@ export const sprintService = {
    * Remove work packages from sprint
    */
   async removeWorkPackagesFromSprint(workPackageIds: string[]): Promise<void> {
-    await api.delete('/sprints/work-packages', {
-      data: { work_package_ids: workPackageIds },
+    await apiRequest('/sprints/work-packages', {
+      method: 'DELETE',
+      body: JSON.stringify({ work_package_ids: workPackageIds }),
     });
   },
 };
