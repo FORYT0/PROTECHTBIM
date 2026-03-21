@@ -623,7 +623,7 @@ export const createProjectRouter = (projectService?: ProjectService): Router => 
     try {
       const { id } = req.params;
 
-      const project = await service.getProject(id);
+      const project = await service.getProjectById(id);
       if (!project) {
         return res.status(404).json({
           error: 'Not Found',

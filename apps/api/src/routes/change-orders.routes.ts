@@ -70,7 +70,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Change order not found' });
     }
 
-    res.json({ changeOrder });
+    return res.json({ changeOrder });
   } catch (error: any) {
     console.error('Error fetching change order:', error);
     return res.status(500).json({ error: error.message });
@@ -148,7 +148,7 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
     }
 
     const changeOrder = await changeOrderService.rejectChangeOrder(req.params.id, userId, reason);
-    res.json({ changeOrder });
+    return res.json({ changeOrder });
   } catch (error: any) {
     console.error('Error rejecting change order:', error);
     return res.status(400).json({ error: error.message });

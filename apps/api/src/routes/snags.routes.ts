@@ -62,10 +62,10 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Snag not found' });
     }
 
-    res.json({ snag });
+    return res.json({ snag });
   } catch (error: any) {
     console.error('Error fetching snag:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -144,10 +144,10 @@ router.post('/:id/assign', async (req: Request, res: Response) => {
     }
 
     const snag = await snagService.assignSnag(req.params.id, assignedTo, userId);
-    res.json({ snag });
+    return res.json({ snag });
   } catch (error: any) {
     console.error('Error assigning snag:', error);
-    res.status(400).json({ error: error.message });
+    return res.status(400).json({ error: error.message });
   }
 });
 

@@ -85,10 +85,10 @@ router.get('/project/:projectId', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Contract not found for this project' });
     }
 
-    res.json({ contract });
+    return res.json({ contract });
   } catch (error: any) {
     console.error('Error fetching contract:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -102,10 +102,10 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Contract not found' });
     }
 
-    res.json({ contract });
+    return res.json({ contract });
   } catch (error: any) {
     console.error('Error fetching contract:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 

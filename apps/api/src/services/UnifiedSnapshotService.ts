@@ -399,7 +399,7 @@ class UnifiedSnapshotService {
     }
 
     const startDate = workPackages[0]?.startDate || new Date();
-    const endDate = workPackages[workPackages.length - 1]?.completionDate || new Date();
+    const endDate = workPackages[workPackages.length - 1]?.dueDate || new Date();
 
     const now = new Date();
     const totalMs = endDate.getTime() - startDate.getTime();

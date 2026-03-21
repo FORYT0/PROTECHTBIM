@@ -65,10 +65,10 @@ router.get('/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Daily report not found' });
     }
 
-    res.json({ dailyReport });
+    return res.json({ dailyReport });
   } catch (error: any) {
     console.error('Error fetching daily report:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -95,10 +95,10 @@ router.get('/project/:projectId/date/:date', async (req: Request, res: Response)
       return res.status(404).json({ error: 'Daily report not found for this date' });
     }
 
-    res.json({ dailyReport });
+    return res.json({ dailyReport });
   } catch (error: any) {
     console.error('Error fetching daily report:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
