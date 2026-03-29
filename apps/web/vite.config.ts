@@ -27,7 +27,7 @@ export default defineConfig({
     exclude: ['web-ifc', 'web-ifc-three'],
   },
   build: {
-    outDir: '../../dist/apps/web',
+    outDir: 'dist',
     rollupOptions: {
       output: {
         manualChunks: {

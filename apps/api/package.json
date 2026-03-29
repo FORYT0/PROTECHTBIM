@@ -11,6 +11,7 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "npm run typeorm -- migration:generate -d src/config/data-source.ts",
     "migration:run": "tsx scripts/run-migrations.ts",
+    "migration:run:prod": "node dist/scripts/run-migrations.js",
     "migration:revert": "npm run typeorm -- migration:revert -d src/config/data-source.ts",
     "db:setup": "tsx scripts/setup-db.ts",
     "db:verify": "tsx scripts/verify-db.ts",

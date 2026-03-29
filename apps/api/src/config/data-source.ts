@@ -49,9 +49,14 @@ export const dataSourceOptions: DataSourceOptions = {
   password: process.env.DATABASE_PASSWORD || 'postgres',
   database: process.env.DATABASE_NAME || 'protecht_bim',
   entities: [User, UserGroup, Role, Permission, Portfolio, Program, Project, WorkPackage, WorkPackageRelation, WorkPackageWatcher, WorkCalendar, Baseline, BaselineWorkPackage, Board, BoardColumn, Sprint, SprintBurndown, TimeEntry, CostEntry, CostCode, Vendor, ResourceRate, Budget, BudgetLine, ActivityLog, Comment, Attachment, WikiPage, Contract, ChangeOrder, ChangeOrderCostLine, PaymentCertificate, DailyReport, DelayEvent, SitePhoto, Snag],
-  migrations: ['src/migrations/*.ts'],
-  synchronize: true, // Auto-create tables from entities
+  migrations: [
+    process.env.NODE_ENV === 'production'
+      ? 'dist/src/migrations/*.js'
+      : 'src/migrations/*.ts'
+  ],
+  synchronize: process.env.NODE_ENV !== 'production', // NEVER true in production
   logging: process.env.NODE_ENV === 'development',
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   // Connection pool configuration
   extra: {
     max: 20, // Maximum number of connections in the pool

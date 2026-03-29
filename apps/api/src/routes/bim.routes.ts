@@ -37,8 +37,8 @@ router.post(
   '/projects/:projectId/bim/models',
   authenticate,
   upload.single('file'),
-  (req: Request, res: Response) => {
-    if (!req.file) return res.status(400).json({ error: 'No IFC file provided' });
+  (req: Request, res: Response): void => {
+    if (!req.file) { res.status(400).json({ error: 'No IFC file provided' }); return; }
 
     const { projectId } = req.params;
     const userId = (req as any).user?.userId ?? 'unknown';
@@ -52,7 +52,7 @@ router.post(
       fileName: req.file.originalname,
       fileSize: req.file.size,
       status: 'ready',
-      storageUrl: null, // would be MinIO URL in production
+      storageUrl: null,
       metadata: null,
       uploadedAt: new Date().toISOString(),
     };
@@ -62,16 +62,15 @@ router.post(
   }
 );
 
-router.get('/bim/models/:modelId', authenticate, (req: Request, res: Response) => {
+router.get('/bim/models/:modelId', authenticate, (req: Request, res: Response): void => {
   const model = modelsStore.get(req.params.modelId);
-  if (!model) return res.status(404).json({ error: 'Model not found' });
+  if (!model) { res.status(404).json({ error: 'Model not found' }); return; }
   res.json({ model });
 });
 
-router.get('/bim/models/:modelId/download', authenticate, (req: Request, res: Response) => {
+router.get('/bim/models/:modelId/download', authenticate, (req: Request, res: Response): void => {
   const model = modelsStore.get(req.params.modelId);
-  if (!model) return res.status(404).json({ error: 'Model not found' });
-  // In production: return pre-signed MinIO URL
+  if (!model) { res.status(404).json({ error: 'Model not found' }); return; }
   res.json({ url: model.storageUrl ?? `/api/v1/bim/models/${req.params.modelId}/file` });
 });
 
@@ -82,13 +81,13 @@ router.delete('/bim/models/:modelId', authenticate, (req: Request, res: Response
 
 // ── Clash Detection ─────────────────────────────────────────
 
-router.post('/bim/clash-detection', authenticate, (req: Request, res: Response) => {
+router.post('/bim/clash-detection', authenticate, (req: Request, res: Response): void => {
   const { modelIds, tolerance = 0.01 } = req.body;
   if (!Array.isArray(modelIds) || modelIds.length < 2) {
-    return res.status(400).json({ error: 'Provide at least 2 model IDs' });
+    res.status(400).json({ error: 'Provide at least 2 model IDs' });
+    return;
   }
   const jobId = uuidv4();
-  // In production: queue via RabbitMQ
   res.status(202).json({ jobId, status: 'queued' });
 });
 
