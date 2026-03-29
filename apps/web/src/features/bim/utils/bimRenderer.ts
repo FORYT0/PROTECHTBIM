@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { IFCLoader } from 'web-ifc-three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { ViewerState } from '../types/bim.types';
 
@@ -9,7 +8,6 @@ export class BIMRenderer {
   private camera!: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
   private controls!: OrbitControls;
-  private ifcLoader!: IFCLoader;
   private loadedModels = new Map<string, THREE.Object3D>();
   private sectionPlane: THREE.Plane | null = null;
   private animFrameId = 0;
@@ -25,49 +23,35 @@ export class BIMRenderer {
     const w = this.container.clientWidth || 800;
     const h = this.container.clientHeight || 600;
 
-    // Scene
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0d0f1a);
 
-    // Camera
     this.camera = new THREE.PerspectiveCamera(60, w / h, 0.1, 5000);
     this.camera.position.set(10, 10, 10);
 
-    // Renderer
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.setSize(w, h);
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.shadowMap.enabled = true;
     this.container.appendChild(this.renderer.domElement);
 
-    // Controls
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.05;
 
-    // Lights
     const ambient = new THREE.AmbientLight(0xffffff, 0.6);
     const dir = new THREE.DirectionalLight(0xffffff, 0.8);
     dir.position.set(50, 100, 50);
     dir.castShadow = true;
     this.scene.add(ambient, dir);
 
-    // Grid
     const grid = new THREE.GridHelper(100, 50, 0x1a1d33, 0x1a1d33);
     this.scene.add(grid);
 
-    // IFC Loader
-    this.ifcLoader = new IFCLoader();
-    await this.ifcLoader.ifcManager.setWasmPath('/wasm/');
-    await this.ifcLoader.ifcManager.applyWebIfcConfig({ USE_FAST_BOOLS: true });
-
-    // Resize observer
     const ro = new ResizeObserver(() => this.onResize());
     ro.observe(this.container);
 
-    // Click handler
     this.renderer.domElement.addEventListener('click', this.onClick);
-
     this.animate();
   }
 
@@ -94,31 +78,82 @@ export class BIMRenderer {
     const hits = this.raycaster.intersectObjects(this.scene.children, true);
     if (hits.length > 0) {
       const hit = hits[0];
-      const modelId = this.getModelIdForObject(hit.object);
-      if (modelId !== null) {
-        // getExpressId returns number synchronously, not a Promise
-        const mesh = hit.object as THREE.Mesh;
-        if (mesh.geometry && hit.face) {
-          const expressId = this.ifcLoader.ifcManager.getExpressId(mesh.geometry, hit.face.a);
-          if (expressId !== undefined) this.onSelectCallback!(expressId);
-        }
-      }
+      const expressId = (hit.object as any).userData?.expressId;
+      if (expressId !== undefined) this.onSelectCallback(expressId);
     }
   };
 
-  private getModelIdForObject(obj: THREE.Object3D): number | null {
-    let current: THREE.Object3D | null = obj;
-    while (current) {
-      if ((current as any).modelID !== undefined) return (current as any).modelID;
-      current = current.parent;
-    }
-    return null;
-  }
-
+  /**
+   * Load an IFC file from a URL using web-ifc directly.
+   * Builds Three.js meshes from the geometry data.
+   */
   async loadIFC(url: string, modelKey: string): Promise<void> {
-    const model = (await this.ifcLoader.loadAsync(url)) as THREE.Object3D;
-    this.scene.add(model);
-    this.loadedModels.set(modelKey, model);
+    // Dynamically import web-ifc to avoid bundling issues
+    const WebIFC = await import('web-ifc');
+    const ifcApi = new WebIFC.IfcAPI();
+    ifcApi.SetWasmPath('/wasm/');
+    await ifcApi.Init();
+
+    const response = await fetch(url);
+    const buffer = await response.arrayBuffer();
+    const data = new Uint8Array(buffer);
+    const modelId = ifcApi.OpenModel(data);
+
+    const group = new THREE.Group();
+    group.name = modelKey;
+
+    // Get all meshes from the model
+    ifcApi.StreamAllMeshes(modelId, (mesh) => {
+      const placedGeometries = mesh.geometries;
+      for (let i = 0; i < placedGeometries.size(); i++) {
+        const placedGeom = placedGeometries.get(i);
+        const geomData = ifcApi.GetGeometry(modelId, placedGeom.geometryExpressID);
+        const verts = ifcApi.GetRawLineData(modelId, placedGeom.geometryExpressID);
+
+        // Build BufferGeometry from flat arrays
+        const vertices = ifcApi.GetVertexArray(geomData.GetVertexData(), geomData.GetVertexDataSize());
+        const indices = ifcApi.GetIndexArray(geomData.GetIndexData(), geomData.GetIndexDataSize());
+
+        const geometry = new THREE.BufferGeometry();
+        // vertices array is [x,y,z, nx,ny,nz, ...] interleaved
+        const posArr = new Float32Array(vertices.length / 2);
+        const normArr = new Float32Array(vertices.length / 2);
+        for (let j = 0; j < vertices.length; j += 6) {
+          const k = j / 2;
+          posArr[k] = vertices[j];
+          posArr[k + 1] = vertices[j + 1];
+          posArr[k + 2] = vertices[j + 2];
+          normArr[k] = vertices[j + 3];
+          normArr[k + 1] = vertices[j + 4];
+          normArr[k + 2] = vertices[j + 5];
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+        geometry.setAttribute('normal', new THREE.BufferAttribute(normArr, 3));
+        geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+
+        const color = placedGeom.color;
+        const material = new THREE.MeshLambertMaterial({
+          color: new THREE.Color(color.x, color.y, color.z),
+          transparent: color.w !== 1,
+          opacity: color.w,
+          side: THREE.DoubleSide,
+        });
+
+        const matrix = new THREE.Matrix4().fromArray(placedGeom.flatTransformation);
+        const meshObj = new THREE.Mesh(geometry, material);
+        meshObj.applyMatrix4(matrix);
+        meshObj.userData.expressId = mesh.expressID;
+
+        group.add(meshObj);
+        geomData.delete();
+      }
+    });
+
+    ifcApi.CloseModel(modelId);
+
+    this.scene.add(group);
+    this.loadedModels.set(modelKey, group);
     this.fitAll();
   }
 
@@ -136,35 +171,20 @@ export class BIMRenderer {
         const mat = obj.material as THREE.MeshLambertMaterial;
         switch (mode) {
           case 'wireframe':
-            mat.wireframe = true;
-            mat.transparent = false;
-            mat.opacity = 1;
-            break;
+            mat.wireframe = true; mat.transparent = false; mat.opacity = 1; break;
           case 'transparent':
-            mat.wireframe = false;
-            mat.transparent = true;
-            mat.opacity = 0.4;
-            break;
+            mat.wireframe = false; mat.transparent = true; mat.opacity = 0.4; break;
           case 'xray':
-            mat.wireframe = false;
-            mat.transparent = true;
-            mat.opacity = 0.15;
-            break;
+            mat.wireframe = false; mat.transparent = true; mat.opacity = 0.15; break;
           default:
-            mat.wireframe = false;
-            mat.transparent = false;
-            mat.opacity = 1;
+            mat.wireframe = false; mat.transparent = false; mat.opacity = 1;
         }
       }
     });
   }
 
   setBackground(bg: ViewerState['background']): void {
-    const colors: Record<string, number> = {
-      dark: 0x0d0f1a,
-      light: 0xf0f4f8,
-      gradient: 0x1a1d33,
-    };
+    const colors: Record<string, number> = { dark: 0x0d0f1a, light: 0xf0f4f8, gradient: 0x1a1d33 };
     this.scene.background = new THREE.Color(colors[bg] ?? 0x0d0f1a);
   }
 
@@ -185,9 +205,7 @@ export class BIMRenderer {
 
   fitAll(): void {
     const box = new THREE.Box3();
-    this.scene.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) box.expandByObject(obj);
-    });
+    this.scene.traverse((obj) => { if (obj instanceof THREE.Mesh) box.expandByObject(obj); });
     if (box.isEmpty()) return;
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());

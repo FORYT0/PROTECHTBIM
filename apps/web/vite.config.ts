@@ -24,14 +24,13 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['web-ifc', 'web-ifc-three'],
+    exclude: ['web-ifc'],
   },
   build: {
     outDir: 'dist',
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('web-ifc')) return 'bim-engine';
           if (id.includes('react-dom') || id.includes('react-router')) return 'react-vendor';
           if (id.includes('lucide-react')) return 'ui-vendor';
           if (id.includes('gantt-task-react')) return 'gantt';
