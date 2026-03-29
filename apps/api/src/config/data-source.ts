@@ -41,7 +41,25 @@ import { Snag } from '../entities/Snag';
 // Load environment variables
 dotenv.config();
 
-export const dataSourceOptions: DataSourceOptions = {
+// Support Railway's DATABASE_URL connection string
+const dbUrl = process.env.DATABASE_URL;
+
+export const dataSourceOptions: DataSourceOptions = dbUrl
+  ? {
+      type: 'postgres',
+      url: dbUrl,
+      entities: [User, UserGroup, Role, Permission, Portfolio, Program, Project, WorkPackage, WorkPackageRelation, WorkPackageWatcher, WorkCalendar, Baseline, BaselineWorkPackage, Board, BoardColumn, Sprint, SprintBurndown, TimeEntry, CostEntry, CostCode, Vendor, ResourceRate, Budget, BudgetLine, ActivityLog, Comment, Attachment, WikiPage, Contract, ChangeOrder, ChangeOrderCostLine, PaymentCertificate, DailyReport, DelayEvent, SitePhoto, Snag],
+      migrations: [
+        process.env.NODE_ENV === 'production'
+          ? 'dist/src/migrations/*.js'
+          : 'src/migrations/*.ts'
+      ],
+      synchronize: process.env.NODE_ENV !== 'production',
+      logging: process.env.NODE_ENV === 'development',
+      ssl: { rejectUnauthorized: false },
+      extra: { max: 20, min: 2, idleTimeoutMillis: 30000, connectionTimeoutMillis: 5000 },
+    }
+  : {
   type: 'postgres',
   host: process.env.DATABASE_HOST || 'localhost',
   port: parseInt(process.env.DATABASE_PORT || '5432', 10),
@@ -54,16 +72,10 @@ export const dataSourceOptions: DataSourceOptions = {
       ? 'dist/src/migrations/*.js'
       : 'src/migrations/*.ts'
   ],
-  synchronize: process.env.NODE_ENV !== 'production', // NEVER true in production
+  synchronize: process.env.NODE_ENV !== 'production',
   logging: process.env.NODE_ENV === 'development',
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  // Connection pool configuration
-  extra: {
-    max: 20, // Maximum number of connections in the pool
-    min: 5, // Minimum number of connections in the pool
-    idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
-    connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection cannot be established
-  },
+  extra: { max: 20, min: 2, idleTimeoutMillis: 30000, connectionTimeoutMillis: 5000 },
 };
 
 // Create and export the data source

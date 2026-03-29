@@ -44,7 +44,7 @@ import { createDashboardRouter } from './routes/dashboard.routes';
 dotenv.config();
 
 const app: Express = express();
-const port = process.env.API_PORT || 3000;
+const port = process.env.PORT || process.env.API_PORT || 3000;
 
 // Middleware
 app.use(helmet());
@@ -101,12 +101,17 @@ app.get('/api/v1', (_req: Request, res: Response) => {
 
 // Start server
 const startServer = async () => {
-  try {
-    // Initialize database connection
-    await initializeDatabase();
+  // Initialize database connection — fatal if it fails
+  await initializeDatabase();
 
-    // Initialize Redis connection
+  // Initialize Redis — optional, non-fatal
+  try {
     await initializeRedis();
+  } catch (err) {
+    console.warn('⚠️  Redis unavailable, continuing without it:', (err as Error).message);
+  }
+
+  try {
 
     // Add session middleware after Redis is initialized
     // TODO: Fix connect-redis compatibility issue
@@ -218,11 +223,12 @@ const startServer = async () => {
     const bimRoutes = (await import('./routes/bim.routes')).default;
     app.use('/api/v1', bimRoutes);
 
-    // Serve frontend static files in production (monorepo: web build is at apps/web/dist)
+    // Serve frontend static files in production
+    // NX builds the web app to dist/apps/web (relative to repo root)
+    // At runtime, __dirname = /app/apps/api/dist, so we go up to /app
     if (process.env.NODE_ENV === 'production') {
-      const webDistPath = path.resolve(__dirname, '../../web/dist');
+      const webDistPath = path.resolve(__dirname, '../../../dist/apps/web');
       app.use(express.static(webDistPath));
-      // SPA fallback — must come AFTER all API routes
       app.get('*', (_req: Request, res: Response) => {
         res.sendFile(path.join(webDistPath, 'index.html'));
       });
