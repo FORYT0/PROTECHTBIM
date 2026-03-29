@@ -96,9 +96,12 @@ export class BIMRenderer {
       const hit = hits[0];
       const modelId = this.getModelIdForObject(hit.object);
       if (modelId !== null) {
-        this.ifcLoader.ifcManager.getExpressId(hit.object.geometry, hit.face!.a)
-          .then((id) => { if (id !== undefined) this.onSelectCallback!(id); })
-          .catch(() => {});
+        // getExpressId returns number synchronously, not a Promise
+        const mesh = hit.object as THREE.Mesh;
+        if (mesh.geometry && hit.face) {
+          const expressId = this.ifcLoader.ifcManager.getExpressId(mesh.geometry, hit.face.a);
+          if (expressId !== undefined) this.onSelectCallback!(expressId);
+        }
       }
     }
   };
@@ -113,7 +116,7 @@ export class BIMRenderer {
   }
 
   async loadIFC(url: string, modelKey: string): Promise<void> {
-    const model = await this.ifcLoader.loadAsync(url);
+    const model = (await this.ifcLoader.loadAsync(url)) as THREE.Object3D;
     this.scene.add(model);
     this.loadedModels.set(modelKey, model);
     this.fitAll();

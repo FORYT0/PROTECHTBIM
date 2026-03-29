@@ -30,16 +30,17 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['lucide-react'],
-          'gantt': ['gantt-task-react'],
-          'date-utils': ['date-fns'],
-          'query': ['@tanstack/react-query'],
+        manualChunks(id) {
+          if (id.includes('web-ifc')) return 'bim-engine';
+          if (id.includes('react-dom') || id.includes('react-router')) return 'react-vendor';
+          if (id.includes('lucide-react')) return 'ui-vendor';
+          if (id.includes('gantt-task-react')) return 'gantt';
+          if (id.includes('date-fns')) return 'date-utils';
+          if (id.includes('@tanstack/react-query')) return 'query';
         },
       },
     },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1000,
   },
   test: {
     globals: true,

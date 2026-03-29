@@ -1,5 +1,5 @@
 import * as WebIFC from 'web-ifc';
-import type { IFCMetadata, IFCStorey, IFCElement, IFCProperty } from '../types/bim.types';
+import type { IFCMetadata, IFCStorey, IFCElement } from '../types/bim.types';
 
 let api: WebIFC.IfcAPI | null = null;
 
@@ -45,7 +45,7 @@ export async function parseIFCBuffer(buffer: ArrayBuffer): Promise<ParseResult> 
       WebIFC.IFCWALL, WebIFC.IFCWALLSTANDARDCASE, WebIFC.IFCSLAB,
       WebIFC.IFCBEAM, WebIFC.IFCCOLUMN, WebIFC.IFCDOOR, WebIFC.IFCWINDOW,
       WebIFC.IFCSTAIR, WebIFC.IFCROOF, WebIFC.IFCSPACE,
-      WebIFC.IFCPIPE, WebIFC.IFCDUCTFITTING, WebIFC.IFCFOOTING,
+      WebIFC.IFCPIPESEGMENT, WebIFC.IFCDUCTFITTING, WebIFC.IFCFOOTING,
     ];
 
     const TYPE_NAMES: Record<number, string> = {
@@ -54,7 +54,7 @@ export async function parseIFCBuffer(buffer: ArrayBuffer): Promise<ParseResult> 
       [WebIFC.IFCCOLUMN]: 'Column', [WebIFC.IFCDOOR]: 'Door',
       [WebIFC.IFCWINDOW]: 'Window', [WebIFC.IFCSTAIR]: 'Stair',
       [WebIFC.IFCROOF]: 'Roof', [WebIFC.IFCSPACE]: 'Space',
-      [WebIFC.IFCPIPE]: 'Pipe', [WebIFC.IFCDUCTFITTING]: 'Duct',
+      [WebIFC.IFCPIPESEGMENT]: 'Pipe', [WebIFC.IFCDUCTFITTING]: 'Duct',
       [WebIFC.IFCFOOTING]: 'Footing',
     };
 
