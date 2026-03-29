@@ -10,7 +10,7 @@ import { useAIStore } from '../stores/useAIStore';
 import {
   Home, Building2, Package, Calendar, Clock,
   DollarSign, Users, LogOut, Menu, X,
-  FileText, TrendingUp, Clipboard, AlertCircle, Sparkles
+  FileText, TrendingUp, Clipboard, AlertCircle, Sparkles, Box
 } from 'lucide-react';
 
 function Layout() {
@@ -169,6 +169,10 @@ function Layout() {
                 <Link to="/resource-management" className={navLinkClass('/resource-management')}>
                   <Users className="w-4 h-4" />
                   <span>Resources</span>
+                </Link>
+                <Link to="/projects" className={navLinkClass('/projects/') + ' bim-nav-hint'} title="Open a project to access BIM Viewer">
+                  <Box className="w-4 h-4" />
+                  <span>BIM</span>
                 </Link>
               </div>
             </div>

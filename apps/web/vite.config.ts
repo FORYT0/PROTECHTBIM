@@ -12,12 +12,19 @@ export default defineConfig({
   },
   server: {
     port: 8081,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin',
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
       },
     },
+  },
+  optimizeDeps: {
+    exclude: ['web-ifc', 'web-ifc-three'],
   },
   build: {
     outDir: '../../dist/apps/web',

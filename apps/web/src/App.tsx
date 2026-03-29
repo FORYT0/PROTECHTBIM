@@ -30,6 +30,8 @@ const ContractsPage = React.lazy(() => import('./pages/ContractsPage'));
 const ChangeOrdersPage = React.lazy(() => import('./pages/ChangeOrdersPage'));
 const DailyReportsPage = React.lazy(() => import('./pages/DailyReportsPage'));
 const SnagsPage = React.lazy(() => import('./pages/SnagsPage'));
+const BIMViewerPage = React.lazy(() => import('./features/bim/BIMViewerPage'));
+
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 function App() {
@@ -80,6 +82,7 @@ function App() {
             <Route path="projects/:projectId/wiki" element={<WikiPageBoard />} />
             <Route path="projects/:projectId/wiki/:slug" element={<WikiPageBoard />} />
             <Route path="projects/:projectId/time-cost" element={<ProjectTimeCostPage />} />
+            <Route path="projects/:projectId/bim" element={<BIMViewerPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

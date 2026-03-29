@@ -212,6 +212,10 @@ const startServer = async () => {
     app.use('/api/v1/daily-reports', dailyReportRoutes);
     app.use('/api/v1/snags', snagRoutes);
 
+    // Mount BIM routes
+    const bimRoutes = (await import('./routes/bim.routes')).default;
+    app.use('/api/v1', bimRoutes);
+
     // 404 handler - MUST be after all routes
     app.use((req: Request, res: Response) => {
       res.status(404).json({
