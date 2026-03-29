@@ -1,7 +1,9 @@
-import { socketManager } from './websocket/socket-manager';import 'reflect-metadata';
+import { socketManager } from './websocket/socket-manager';
+import 'reflect-metadata';
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import path from 'path';
 import * as dotenv from 'dotenv';
 import { initializeDatabase } from './config/data-source';
 import { initializeRedis, closeRedis } from './config/redis';
@@ -215,6 +217,16 @@ const startServer = async () => {
     // Mount BIM routes
     const bimRoutes = (await import('./routes/bim.routes')).default;
     app.use('/api/v1', bimRoutes);
+
+    // Serve frontend static files in production (monorepo: web build is at apps/web/dist)
+    if (process.env.NODE_ENV === 'production') {
+      const webDistPath = path.resolve(__dirname, '../../web/dist');
+      app.use(express.static(webDistPath));
+      // SPA fallback — must come AFTER all API routes
+      app.get('*', (_req: Request, res: Response) => {
+        res.sendFile(path.join(webDistPath, 'index.html'));
+      });
+    }
 
     // 404 handler - MUST be after all routes
     app.use((req: Request, res: Response) => {
