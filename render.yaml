@@ -3,7 +3,7 @@ services:
     name: protecht-bim-api
     env: node
     buildCommand: npm install --include=dev && npx nx run api:build
-    startCommand: node apps/api/dist/main.js
+    startCommand: node apps/api/dist/apps/api/src/main.js
     envVars:
       - key: NODE_ENV
         value: production
