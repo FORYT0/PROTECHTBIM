@@ -225,9 +225,9 @@ const startServer = async () => {
 
     // Serve frontend static files in production
     // NX builds the web app to dist/apps/web (relative to repo root)
-    // At runtime, __dirname = /app/apps/api/dist, so we go up to /app
+    // At runtime, __dirname = /app/apps/api/dist/apps/api/src, so we go up 6 levels to /app
     if (process.env.NODE_ENV === 'production') {
-      const webDistPath = path.resolve(__dirname, '../../../dist/apps/web');
+      const webDistPath = path.resolve(__dirname, '../../../../../../dist/apps/web');
       app.use(express.static(webDistPath));
       app.get('*', (_req: Request, res: Response) => {
         res.sendFile(path.join(webDistPath, 'index.html'));

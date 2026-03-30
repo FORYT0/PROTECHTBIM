@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "nx run-many --target=dev --all",
     "build": "npm install && nx run-many --target=build --all",
-    "start": "node -r module-alias/register apps/api/dist/apps/api/src/main.js",
+    "start": "node apps/api/dist/apps/api/src/main.js",
     "test": "nx run-many --target=test --all",
     "lint": "nx run-many --target=lint --all",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
