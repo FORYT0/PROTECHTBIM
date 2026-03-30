@@ -224,8 +224,9 @@ const startServer = async () => {
     app.use('/api/v1', bimRoutes);
 
     // Serve frontend static files in production
-    // NX builds the web app to dist/apps/web (relative to repo root)
-    // At runtime, __dirname = /app/apps/api/dist/apps/api/src, so we go up 6 levels to /app
+    // NX compiles main.js to apps/api/dist/apps/api/src/main.js
+    // __dirname at runtime = /app/apps/api/dist/apps/api/src
+    // web dist is at /app/dist/apps/web (6 levels up from __dirname)
     if (process.env.NODE_ENV === 'production') {
       const webDistPath = path.resolve(__dirname, '../../../../../../dist/apps/web');
       app.use(express.static(webDistPath));

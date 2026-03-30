@@ -1,6 +1,6 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install && npm run build"
+buildCommand = "npm install && npx nx reset && npm run build"
 
 [deploy]
 startCommand = "npm run start"

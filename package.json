@@ -10,8 +10,8 @@
   ],
   "scripts": {
     "dev": "nx run-many --target=dev --all",
-    "build": "npm install && nx run-many --target=build --all",
-    "start": "node apps/api/dist/apps/api/src/main.js",
+    "build": "npm install && npx nx reset && nx run-many --target=build --all",
+    "start": "node -r module-alias/register apps/api/dist/apps/api/src/main.js",
     "test": "nx run-many --target=test --all",
     "lint": "nx run-many --target=lint --all",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
@@ -41,7 +41,7 @@
     "npm": ">=9.0.0"
   },
   "_moduleAliases": {
-    "@protecht-bim/shared-utils": "apps/api/dist/libs/shared-utils/src",
-    "@protecht-bim/shared-types": "apps/api/dist/libs/shared-types/src"
+    "@protecht-bim/shared-utils": "dist/libs/shared-utils/src",
+    "@protecht-bim/shared-types": "dist/libs/shared-types/src"
   }
 }
