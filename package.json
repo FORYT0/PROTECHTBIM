@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "nx run-many --target=dev --all",
     "build": "npm install && nx run-many --target=build --all",
-    "start": "node apps/api/dist/apps/api/src/main.js",
+    "start": "node -r module-alias/register apps/api/dist/apps/api/src/main.js",
     "test": "nx run-many --target=test --all",
     "lint": "nx run-many --target=lint --all",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "groq-sdk": "^1.1.1",
+    "module-alias": "^2.3.4",
     "tslib": "^2.6.2",
     "zustand": "^5.0.12"
   },
@@ -38,5 +39,9 @@
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
+  },
+  "_moduleAliases": {
+    "@protecht-bim/shared-utils": "apps/api/dist/libs/shared-utils/src",
+    "@protecht-bim/shared-types": "apps/api/dist/libs/shared-types/src"
   }
 }
