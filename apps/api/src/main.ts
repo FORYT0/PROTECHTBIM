@@ -1,6 +1,6 @@
 import { socketManager } from './websocket/socket-manager';
 import 'reflect-metadata';
-import express, { Express, Request, Response } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import path from 'path';
@@ -39,56 +39,76 @@ import { createProjectAnalyticsRouter } from './routes/project-analytics.routes'
 import { createFinancialAnalyticsRouter } from './routes/financial-analytics.routes';
 import { createDashboardRouter } from './routes/dashboard.routes';
 
-// Load environment variables
 dotenv.config();
 
 const app: Express = express();
 const port = parseInt(process.env.PORT || process.env.API_PORT || '3000', 10);
 
-// ─── Track startup state for health check ────────────────────────
 let dbReady = false;
 let startupError: string | null = null;
 
-// ─── Middleware ───────────────────────────────────────────────────
-app.use(helmet());
-
-// CORS - allow multiple origins + Vercel/Render preview domains
-const allowedOrigins = (process.env.CORS_ORIGIN || '')
+// ─── CORS ─────────────────────────────────────────────────────────
+// MUST be the very first middleware so OPTIONS preflight gets headers
+// before anything else (including helmet) touches the response.
+// 
+// Strategy: allow ALL origins in development; in production allow
+// localhost + any *.vercel.app + any explicit CORS_ORIGIN list.
+// We NEVER throw on unknown origins — we just omit the header so the
+// browser's same-origin check rejects it naturally (no 500/503).
+const corsOriginList = (process.env.CORS_ORIGIN || '')
   .split(',').map(o => o.trim()).filter(Boolean);
-const defaultOrigins = [
-  'http://localhost:3001', 'http://localhost:8081', 'http://localhost:5173',
-];
+
 app.use(cors({
   origin: (origin, callback) => {
+    // No origin = server-to-server / curl / mobile — always allow
     if (!origin) return callback(null, true);
-    const allAllowed = [...defaultOrigins, ...allowedOrigins];
-    if (allAllowed.includes(origin)) return callback(null, true);
-    if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com') || origin.endsWith('.railway.app')) {
+    // Development — allow everything
+    if (process.env.NODE_ENV !== 'production') return callback(null, true);
+    // Localhost variations
+    if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
       return callback(null, true);
     }
-    callback(new Error('CORS: Origin ' + origin + ' not allowed'));
+    // Explicit allowlist from env
+    if (corsOriginList.includes(origin)) return callback(null, true);
+    // Wildcard cloud preview domains
+    if (
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.railway.app') ||
+      origin.endsWith('.onrender.com') ||
+      origin.endsWith('.netlify.app')
+    ) {
+      return callback(null, true);
+    }
+    // Unknown origin — pass null (not an error!) which omits the header.
+    // The browser will block it, but we won't crash with a 500.
+    console.warn(`[CORS] Blocked origin: ${origin}`);
+    callback(null, false);
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200, // IE11 sends preflight expecting 200 not 204
 }));
 
-app.use(express.json());
+// Handle OPTIONS preflight explicitly — always respond 200
+app.options('*', cors());
+
+// ─── Security & body parsing ──────────────────────────────────────
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Health check — registered IMMEDIATELY, before DB init ───────
-// Railway probes this during startup. It MUST respond as soon as the
-// TCP port is open, even before the database finishes connecting.
+// ─── Health check ─────────────────────────────────────────────────
+// Must be registered BEFORE startServer() so Railway can probe the
+// port the moment it opens — before DB connects.
 app.get('/health', (_req: Request, res: Response) => {
-  if (startupError) {
-    return res.status(503).json({
-      status: 'error',
-      error: startupError,
-      timestamp: new Date().toISOString(),
-      service: 'protecht-bim-api',
-    });
-  }
-  res.json({
-    status: dbReady ? 'ok' : 'starting',
-    db: dbReady ? 'connected' : 'connecting',
+  // Always return 200 — a non-200 causes Railway to restart the container.
+  // Report db state in the body so we can debug without restarting.
+  res.status(200).json({
+    status: startupError ? 'degraded' : dbReady ? 'ok' : 'starting',
+    db: dbReady ? 'connected' : startupError ? `error: ${startupError.slice(0, 80)}` : 'connecting',
     timestamp: new Date().toISOString(),
     service: 'protecht-bim-api',
     version: '0.1.0',
@@ -96,7 +116,6 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-// ─── API info endpoint ────────────────────────────────────────────
 app.get('/api/v1', (_req: Request, res: Response) => {
   res.json({
     name: 'PROTECHT BIM API',
@@ -106,42 +125,42 @@ app.get('/api/v1', (_req: Request, res: Response) => {
   });
 });
 
-// ─── Start server & bind port FIRST, then init DB ────────────────
+// ─── Start server ─────────────────────────────────────────────────
 const startServer = async () => {
-  // Bind TCP port immediately so Railway health check can reach us
+  // 1. Bind port FIRST — Railway health check probes immediately
   const server = app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Server listening on 0.0.0.0:${port}`);
     console.log(`🏥 Health: http://localhost:${port}/health`);
     console.log(`🌍 Env: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔒 CORS origins: ${corsOriginList.length ? corsOriginList.join(', ') : '(wildcard *.vercel.app)'}`);
   });
 
-  // Initialize WebSockets (can happen before DB)
+  // 2. WebSockets — before DB (doesn't need it)
   socketManager.initialize(server);
-  console.log('🔌 WebSocket server initialized');
+  console.log('🔌 WebSocket initialized');
 
-  // Initialize database — non-blocking for health check
+  // 3. Database — async, non-fatal to health check
   try {
     await initializeDatabase();
     dbReady = true;
-    console.log('✅ Database ready');
+    startupError = null;
+    console.log('✅ Database connected');
   } catch (err) {
     startupError = (err as Error).message;
-    console.error('❌ Database init failed — server still running but DB unavailable:', startupError);
-    // Don't exit — let health check report the error, Railway will restart
+    console.error('❌ DB failed (health returns degraded, not restarting):', startupError);
   }
 
-  // Initialize Redis — optional, never fatal
+  // 4. Redis — optional, never fatal
   try {
     await initializeRedis();
   } catch (err) {
-    console.warn('⚠️  Redis unavailable, continuing without caching:', (err as Error).message);
+    console.warn('⚠️  Redis skipped:', (err as Error).message);
   }
 
+  // 5. Mount all routes
   try {
-    // Initialize auth service
     const authService = createAuthService();
 
-    // Mount all routes
     app.use('/api/v1/auth', createAuthRouter(authService));
     app.use('/api/v1', rbacRoutes);
     app.use('/api/v1/projects', createProjectRouter());
@@ -171,33 +190,29 @@ const startServer = async () => {
     app.use('/api/v1/projects', createFinancialAnalyticsRouter());
     app.use('/api/v1', createDashboardRouter());
 
-    // Lazy-loaded enterprise routes
     const createAiRouter = (await import('./routes/ai.routes')).default;
     app.use('/api/v1/ai', createAiRouter());
 
-    const contractRoutes  = (await import('./routes/contracts.routes')).default;
+    const contractRoutes    = (await import('./routes/contracts.routes')).default;
     const changeOrderRoutes = (await import('./routes/change-orders.routes')).default;
     const dailyReportRoutes = (await import('./routes/daily-reports.routes')).default;
-    const snagRoutes = (await import('./routes/snags.routes')).default;
-    app.use('/api/v1/contracts', contractRoutes);
+    const snagRoutes        = (await import('./routes/snags.routes')).default;
+    app.use('/api/v1/contracts',     contractRoutes);
     app.use('/api/v1/change-orders', changeOrderRoutes);
     app.use('/api/v1/daily-reports', dailyReportRoutes);
-    app.use('/api/v1/snags', snagRoutes);
+    app.use('/api/v1/snags',         snagRoutes);
 
     const bimRoutes = (await import('./routes/bim.routes')).default;
     app.use('/api/v1', bimRoutes);
 
-    // 404 handler
-    app.use((req: Request, res: Response) => {
-      res.status(404).json({
-        error: 'Not Found',
-        message: `Route ${req.method} ${req.path} not found`,
-      });
+    // 404
+    app.use((_req: Request, res: Response) => {
+      res.status(404).json({ error: 'Not Found' });
     });
 
     // Error handler
-    app.use((err: Error, _req: Request, res: Response, _next: any) => {
-      console.error('Error:', err);
+    app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+      console.error('Unhandled error:', err.message);
       res.status(500).json({
         error: 'Internal Server Error',
         message: process.env.NODE_ENV === 'development' ? err.message : 'An error occurred',
@@ -210,16 +225,8 @@ const startServer = async () => {
   }
 };
 
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received — shutting down gracefully');
-  await closeRedis();
-  process.exit(0);
-});
-process.on('SIGINT', async () => {
-  await closeRedis();
-  process.exit(0);
-});
+process.on('SIGTERM', async () => { await closeRedis(); process.exit(0); });
+process.on('SIGINT',  async () => { await closeRedis(); process.exit(0); });
 
 startServer().catch(err => {
   console.error('Fatal startup error:', err);

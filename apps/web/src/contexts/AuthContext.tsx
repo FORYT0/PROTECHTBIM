@@ -26,29 +26,29 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const TOKEN_KEY = 'auth_tokens';
-const USER_KEY = 'auth_user';
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+const USER_KEY  = 'auth_user';
+
+// ─── Single source of truth for API base URL ─────────────────────
+// Reads VITE_API_URL baked in at build time by Vite.
+// Falls back to relative /api/v1 (works when API & frontend are co-hosted).
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [tokens, setTokens] = useState<AuthTokens | null>(null);
+  const [user, setUser]       = useState<User | null>(null);
+  const [tokens, setTokens]   = useState<AuthTokens | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user and tokens from localStorage on mount
+  // Rehydrate from localStorage on mount
   useEffect(() => {
     const storedTokens = localStorage.getItem(TOKEN_KEY);
-    const storedUser = localStorage.getItem(USER_KEY);
-
+    const storedUser   = localStorage.getItem(USER_KEY);
     if (storedTokens && storedUser) {
       try {
         const parsedTokens = JSON.parse(storedTokens);
         setTokens(parsedTokens);
         setUser(JSON.parse(storedUser));
-
-        // Always attempt to reconnect when auth state is loaded from localStorage
         notificationService.connect(parsedTokens.accessToken);
-      } catch (error) {
-        console.error('Failed to parse stored auth data:', error);
+      } catch {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
       }
@@ -57,114 +57,90 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (email: string, password: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+    const url = `${API_BASE_URL}/auth/login`;
+    console.log('[Auth] POST', url);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
-      }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-      const data = await response.json();
-
-      const authTokens: AuthTokens = {
-        accessToken: data.tokens.accessToken,
-        refreshToken: data.tokens.refreshToken,
-      };
-
-      // Store tokens and user in state and localStorage
-      setTokens(authTokens);
-      setUser(data.user);
-      localStorage.setItem(TOKEN_KEY, JSON.stringify(authTokens));
-      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-
-      // Connect to notifications
-      notificationService.connect(authTokens.accessToken);
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || `Login failed (${response.status})`);
     }
+
+    const data = await response.json();
+    const authTokens: AuthTokens = {
+      accessToken:  data.tokens.accessToken,
+      refreshToken: data.tokens.refreshToken,
+    };
+
+    setTokens(authTokens);
+    setUser(data.user);
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(authTokens));
+    localStorage.setItem(USER_KEY,  JSON.stringify(data.user));
+    notificationService.connect(authTokens.accessToken);
   };
 
   const register = async (name: string, email: string, password: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email, password }),
-      });
+    const url = `${API_BASE_URL}/auth/register`;
+    console.log('[Auth] POST', url);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
-      }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+    });
 
-      const data = await response.json();
-
-      const authTokens: AuthTokens = {
-        accessToken: data.tokens.accessToken,
-        refreshToken: data.tokens.refreshToken,
-      };
-
-      // Store tokens and user in state and localStorage
-      setTokens(authTokens);
-      setUser(data.user);
-      localStorage.setItem(TOKEN_KEY, JSON.stringify(authTokens));
-      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-    } catch (error) {
-      console.error('Registration error:', error);
-      throw error;
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || `Registration failed (${response.status})`);
     }
+
+    const data = await response.json();
+    const authTokens: AuthTokens = {
+      accessToken:  data.tokens.accessToken,
+      refreshToken: data.tokens.refreshToken,
+    };
+
+    setTokens(authTokens);
+    setUser(data.user);
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(authTokens));
+    localStorage.setItem(USER_KEY,  JSON.stringify(data.user));
+    notificationService.connect(authTokens.accessToken);
   };
 
   const logout = () => {
-    // Clear state and localStorage
+    const currentToken = tokens?.accessToken;
     setUser(null);
     setTokens(null);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-
-    // Disconnect notifications
     notificationService.disconnect();
 
-    // Optionally call logout endpoint
-    if (tokens?.accessToken) {
+    if (currentToken) {
       fetch(`${API_BASE_URL}/auth/logout`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${tokens.accessToken}`,
-        },
-      }).catch(error => {
-        console.error('Logout API call failed:', error);
-      });
+        headers: { Authorization: `Bearer ${currentToken}` },
+      }).catch(() => {});
     }
   };
 
-  const value: AuthContextType = {
-    user,
-    tokens,
-    login,
-    register,
-    logout,
-    isAuthenticated: !!user && !!tokens,
-    isLoading,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{
+      user, tokens, login, register, logout,
+      isAuthenticated: !!user && !!tokens,
+      isLoading,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 };
