@@ -15,7 +15,14 @@ class SocketManager {
     private userSockets: Map<string, string[]> = new Map();
 
     public initialize(server: HttpServer): void {
-        const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || ['http://localhost:3001', 'http://localhost:8081'];
+        const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim()).filter(Boolean);
+        const allowedOrigins = (origin: string) => {
+            if (!origin) return true;
+            if (corsOrigins.includes(origin)) return true;
+            if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) return true;
+            if (origin.endsWith('.vercel.app') || origin.endsWith('.railway.app') || origin.endsWith('.onrender.com')) return true;
+            return false;
+        };
         
         this.io = new Server(server, {
             cors: {
