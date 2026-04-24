@@ -1,10 +1,10 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install && node apps/api/scripts/build-bundle.js"
+buildCommand = "npm install && npx nx reset && npm run build"
 
 [deploy]
-startCommand = "node apps/api/dist-bundle/main.js"
+startCommand = "node dist/apps/api/src/main.js"
 restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 5
+restartPolicyMaxRetries = 10
 healthcheckPath = "/health"
 healthcheckTimeout = 120
