@@ -15,7 +15,9 @@
     "migration:revert": "npm run typeorm -- migration:revert -d src/config/data-source.ts",
     "db:setup": "tsx scripts/setup-db.ts",
     "db:verify": "tsx scripts/verify-db.ts",
-    "redis:test": "tsx scripts/test-redis.ts"
+    "redis:test": "tsx scripts/test-redis.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "seed:bim": "tsx scripts/seed-bim-project.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.995.0",
@@ -58,6 +60,7 @@
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.16",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "tsconfig-paths": "^4.2.0"
   }
 }

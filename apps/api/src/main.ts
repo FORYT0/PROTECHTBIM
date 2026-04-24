@@ -49,18 +49,19 @@ const port = process.env.PORT || process.env.API_PORT || 3000;
 // Middleware
 app.use(helmet());
 
-// CORS configuration - handle multiple origins properly
-const allowedOrigins = process.env.CORS_ORIGIN?.split(',').map(o => o.trim()) || ['http://localhost:3001', 'http://localhost:8081'];
+// CORS configuration - allow multiple origins + Vercel/Render preview domains
+const allowedOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',').map(o => o.trim()).filter(Boolean);
+const defaultOrigins = [
+  'http://localhost:3001','http://localhost:8081','http://localhost:5173',
+];
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    const allAllowed = [...defaultOrigins, ...allowedOrigins];
+    if (allAllowed.includes(origin)) return callback(null, true);
+    if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) return callback(null, true);
+    callback(new Error('CORS: Origin ' + origin + ' not allowed'));
   },
   credentials: true,
 }));

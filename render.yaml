@@ -2,11 +2,21 @@ services:
   - type: web
     name: protecht-bim-api
     env: node
-    buildCommand: npm install --include=dev && npx nx run api:build
+    region: oregon
+    plan: starter
+    buildCommand: >
+      npm install --include=dev &&
+      npx nx run api:build --skip-nx-cache ||
+      (cd apps/api && npm install && npx tsc -p tsconfig.json --outDir dist)
     startCommand: node apps/api/dist/apps/api/src/main.js
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: protecht-bim-db
+          property: connectionString
       - key: DB_HOST
         value: db.rmqpdtrlmgjvkpibwwgr.supabase.co
       - key: DB_PORT
@@ -27,9 +37,11 @@ services:
         value: "true"
       - key: GROQ_API_KEY
         sync: false
-      - key: CORS_ORIGIN
-        sync: false
-      - key: WEBSOCKET_CORS_ORIGIN
-        sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: CORS_ORIGIN
+        value: "https://protecht-bim.vercel.app,https://protecht-bim-web.vercel.app"
+      - key: WEBSOCKET_CORS_ORIGIN
+        value: "https://protecht-bim.vercel.app,https://protecht-bim-web.vercel.app"
+      - key: PORT
+        value: "3000"
