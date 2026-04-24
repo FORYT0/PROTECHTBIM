@@ -26,6 +26,7 @@ export const WikiPageBoard: React.FC = () => {
       contributors: 0,
       avgReadTime: 0,
       recentEdits: 0,
+      recentUpdates: 5,
     };
 
     const loadWiki = useCallback(async () => {

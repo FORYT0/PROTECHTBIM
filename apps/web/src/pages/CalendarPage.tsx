@@ -38,6 +38,7 @@ const CalendarPage: React.FC = () => {
     completed: 0,
     overdue: 0,
     thisWeek: 0,
+    thisMonth: 12,
     utilizationRate: 0,
     avgDuration: 0,
   };

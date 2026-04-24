@@ -47,6 +47,7 @@ function WorkPackagesPage() {
     avgCompletion: 0,
     teamMembers: 0,
     avgDuration: 14,
+    blockedPackages: 2,
   };
 
   const loadWorkPackages = async () => {
