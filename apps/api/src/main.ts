@@ -7,7 +7,6 @@ import path from 'path';
 import * as dotenv from 'dotenv';
 import { initializeDatabase } from './config/data-source';
 import { initializeRedis, closeRedis } from './config/redis';
-// import { createSessionMiddleware } from './config/session';
 import { createAuthService } from './middleware/auth.middleware';
 import { createAuthRouter } from './routes/auth.routes';
 import rbacRoutes from './routes/rbac.routes';
@@ -44,23 +43,29 @@ import { createDashboardRouter } from './routes/dashboard.routes';
 dotenv.config();
 
 const app: Express = express();
-const port = process.env.PORT || process.env.API_PORT || 3000;
+const port = parseInt(process.env.PORT || process.env.API_PORT || '3000', 10);
 
-// Middleware
+// ─── Track startup state for health check ────────────────────────
+let dbReady = false;
+let startupError: string | null = null;
+
+// ─── Middleware ───────────────────────────────────────────────────
 app.use(helmet());
 
-// CORS configuration - allow multiple origins + Vercel/Render preview domains
+// CORS - allow multiple origins + Vercel/Render preview domains
 const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .split(',').map(o => o.trim()).filter(Boolean);
 const defaultOrigins = [
-  'http://localhost:3001','http://localhost:8081','http://localhost:5173',
+  'http://localhost:3001', 'http://localhost:8081', 'http://localhost:5173',
 ];
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     const allAllowed = [...defaultOrigins, ...allowedOrigins];
     if (allAllowed.includes(origin)) return callback(null, true);
-    if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com')) return callback(null, true);
+    if (origin.endsWith('.vercel.app') || origin.endsWith('.onrender.com') || origin.endsWith('.railway.app')) {
+      return callback(null, true);
+    }
     callback(new Error('CORS: Origin ' + origin + ' not allowed'));
   },
   credentials: true,
@@ -69,174 +74,120 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session middleware will be added after Redis initialization
-
-// Health check endpoint
-app.get('/health', async (_req: Request, res: Response) => {
-  try {
-    const health = {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      service: 'protecht-bim-api',
-      version: '0.1.0',
-      uptime: process.uptime(),
-    };
-    res.json(health);
-  } catch (error) {
-    res.status(503).json({
+// ─── Health check — registered IMMEDIATELY, before DB init ───────
+// Railway probes this during startup. It MUST respond as soon as the
+// TCP port is open, even before the database finishes connecting.
+app.get('/health', (_req: Request, res: Response) => {
+  if (startupError) {
+    return res.status(503).json({
       status: 'error',
+      error: startupError,
       timestamp: new Date().toISOString(),
       service: 'protecht-bim-api',
     });
   }
+  res.json({
+    status: dbReady ? 'ok' : 'starting',
+    db: dbReady ? 'connected' : 'connecting',
+    timestamp: new Date().toISOString(),
+    service: 'protecht-bim-api',
+    version: '0.1.0',
+    uptime: process.uptime(),
+  });
 });
 
-// API version endpoint
+// ─── API info endpoint ────────────────────────────────────────────
 app.get('/api/v1', (_req: Request, res: Response) => {
   res.json({
     name: 'PROTECHT BIM API',
     version: '0.1.0',
     description: 'Construction Project Management Platform with BIM Integration',
+    status: dbReady ? 'ready' : 'starting',
   });
 });
 
-// Start server
+// ─── Start server & bind port FIRST, then init DB ────────────────
 const startServer = async () => {
-  // Initialize database connection — fatal if it fails
-  await initializeDatabase();
+  // Bind TCP port immediately so Railway health check can reach us
+  const server = app.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 Server listening on 0.0.0.0:${port}`);
+    console.log(`🏥 Health: http://localhost:${port}/health`);
+    console.log(`🌍 Env: ${process.env.NODE_ENV || 'development'}`);
+  });
 
-  // Initialize Redis — optional, non-fatal
+  // Initialize WebSockets (can happen before DB)
+  socketManager.initialize(server);
+  console.log('🔌 WebSocket server initialized');
+
+  // Initialize database — non-blocking for health check
+  try {
+    await initializeDatabase();
+    dbReady = true;
+    console.log('✅ Database ready');
+  } catch (err) {
+    startupError = (err as Error).message;
+    console.error('❌ Database init failed — server still running but DB unavailable:', startupError);
+    // Don't exit — let health check report the error, Railway will restart
+  }
+
+  // Initialize Redis — optional, never fatal
   try {
     await initializeRedis();
   } catch (err) {
-    console.warn('⚠️  Redis unavailable, continuing without it:', (err as Error).message);
+    console.warn('⚠️  Redis unavailable, continuing without caching:', (err as Error).message);
   }
 
   try {
-
-    // Add session middleware after Redis is initialized
-    // TODO: Fix connect-redis compatibility issue
-    // app.use(createSessionMiddleware());
-
     // Initialize auth service
     const authService = createAuthService();
 
-    // Mount authentication routes
+    // Mount all routes
     app.use('/api/v1/auth', createAuthRouter(authService));
-
-    // Mount RBAC routes
     app.use('/api/v1', rbacRoutes);
-
-    // Mount project routes
     app.use('/api/v1/projects', createProjectRouter());
-
-    // Mount work package routes
     app.use('/api/v1/work_packages', createWorkPackageRouter());
-
-    // Mount work package relation routes (nested under work packages)
     app.use('/api/v1/work_packages', createWorkPackageRelationRouter());
-
-    // Mount standalone relation routes
     app.use('/api/v1/work_package_relations', createRelationRouter());
-
-    // Mount scheduling routes
     app.use('/api/v1/projects', createSchedulingRouter());
-
-    // Mount work calendar routes
     app.use('/api/v1', workCalendarRoutes);
-
-    // Mount baseline routes
     app.use('/api/v1', baselineRoutes);
-
-    // Mount board routes
     app.use('/api/v1', boardRoutes);
-
-    // Mount sprint routes
     app.use('/api/v1', sprintRoutes);
-
-    // Mount burndown routes
     app.use('/api/v1', burndownRoutes);
-
-    // Mount iCalendar routes
     app.use('/api/v1/icalendar', createICalendarRouter());
-
-    // Mount time entry routes
     app.use('/api/v1/time_entries', createTimeEntryRouter());
-
-    // Mount cost code routes
     app.use('/api/v1/cost-codes', createCostCodeRouter());
-
-    // Mount vendor routes
     app.use('/api/v1/vendors', createVendorRouter());
-
-    // Mount resource rate routes
     app.use('/api/v1/resource-rates', createResourceRateRouter());
-
-    // Mount cost entry routes
     app.use('/api/v1/cost-entries', createCostEntryRouter());
-
-    // Mount budget routes
     app.use('/api/v1', createBudgetRouter());
-
-    // Mount activity routes
     app.use('/api/v1', createActivityRouter());
-
-    // Mount comment routes
     app.use('/api/v1/comments', createCommentRouter());
-
-    // Mount resource routes
     app.use('/api/v1/resources', createResourceRouter());
-
-    // Mount attachment routes
     app.use('/api/v1/attachments', createAttachmentRouter());
-
-    // Mount user routes
     app.use('/api/v1/users', createUserRouter());
-
-    // Mount wiki routes
     app.use('/api/v1', wikiRoutes);
-
-    // Mount project analytics routes
     app.use('/api/v1/projects', createProjectAnalyticsRouter());
-
-    // Mount financial analytics routes
     app.use('/api/v1/projects', createFinancialAnalyticsRouter());
-
-    // ✅ Mount unified dashboard routes
     app.use('/api/v1', createDashboardRouter());
 
-    // Mount AI routes
+    // Lazy-loaded enterprise routes
     const createAiRouter = (await import('./routes/ai.routes')).default;
     app.use('/api/v1/ai', createAiRouter());
 
-    // Mount enterprise construction routes
-    const contractRoutes = (await import('./routes/contracts.routes')).default;
+    const contractRoutes  = (await import('./routes/contracts.routes')).default;
     const changeOrderRoutes = (await import('./routes/change-orders.routes')).default;
     const dailyReportRoutes = (await import('./routes/daily-reports.routes')).default;
     const snagRoutes = (await import('./routes/snags.routes')).default;
-    
     app.use('/api/v1/contracts', contractRoutes);
     app.use('/api/v1/change-orders', changeOrderRoutes);
     app.use('/api/v1/daily-reports', dailyReportRoutes);
     app.use('/api/v1/snags', snagRoutes);
 
-    // Mount BIM routes
     const bimRoutes = (await import('./routes/bim.routes')).default;
     app.use('/api/v1', bimRoutes);
 
-    // Serve frontend static files in production
-    // NX compiles main.js to apps/api/dist/apps/api/src/main.js
-    // __dirname at runtime = /app/apps/api/dist/apps/api/src
-    // web dist is at /app/dist/apps/web (6 levels up from __dirname)
-    if (process.env.NODE_ENV === 'production') {
-      const webDistPath = path.resolve(__dirname, '../../../../../../dist/apps/web');
-      app.use(express.static(webDistPath));
-      app.get('*', (_req: Request, res: Response) => {
-        res.sendFile(path.join(webDistPath, 'index.html'));
-      });
-    }
-
-    // 404 handler - MUST be after all routes
+    // 404 handler
     app.use((req: Request, res: Response) => {
       res.status(404).json({
         error: 'Not Found',
@@ -244,7 +195,7 @@ const startServer = async () => {
       });
     });
 
-    // Error handler - MUST be last
+    // Error handler
     app.use((err: Error, _req: Request, res: Response, _next: any) => {
       console.error('Error:', err);
       res.status(500).json({
@@ -253,50 +204,24 @@ const startServer = async () => {
       });
     });
 
-    // Start Express server
-    const server = app.listen(port, () => {
-      console.log(`🚀 Server is running on http://localhost:${port}`);
-      console.log(`📚 API documentation: http://localhost:${port}/api/v1`);
-      console.log(`🏥 Health check: http://localhost:${port}/health`);
-      console.log(`🔐 Auth endpoints: http://localhost:${port}/api/v1/auth`);
-      console.log(`🔑 RBAC endpoints: http://localhost:${port}/api/v1/roles, /api/v1/permissions`);
-      console.log(`📁 Project endpoints: http://localhost:${port}/api/v1/projects`);
-      console.log(`📦 Work Package endpoints: http://localhost:${port}/api/v1/work_packages`);
-      console.log(`🔗 Work Package Relations: http://localhost:${port}/api/v1/work_packages/:id/relations`);
-      console.log(`📅 Scheduling endpoints: http://localhost:${port}/api/v1/projects/:id/scheduling`);
-      console.log(`📆 Work Calendar endpoints: http://localhost:${port}/api/v1/calendars, /api/v1/projects/:id/calendar`);
-      console.log(`📊 Baseline endpoints: http://localhost:${port}/api/v1/projects/:id/baselines, /api/v1/baselines/:id`);
-      console.log(`📋 Board endpoints: http://localhost:${port}/api/v1/projects/:id/boards, /api/v1/boards/:id`);
-      console.log(`🏃 Sprint endpoints: http://localhost:${port}/api/v1/projects/:id/sprints, /api/v1/sprints/:id`);
-      console.log(`📉 Burndown endpoints: http://localhost:${port}/api/v1/sprints/:id/burndown, /api/v1/projects/:id/burndown`);
-      console.log(`📅 iCalendar endpoints: http://localhost:${port}/api/v1/icalendar/projects/:id, /api/v1/icalendar/users/me`);
-      console.log(`⏱️  Time Entry endpoints: http://localhost:${port}/api/v1/time_entries`);
-      console.log(`💰 Cost Entry endpoints: http://localhost:${port}/api/v1/cost_entries`);
-      console.log(`📊 Activity endpoints: http://localhost:${port}/api/v1/projects/:projectId/activity, /api/v1/activity/feed, /api/v1/activity/filters`);
-      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-
-    // Initialize WebSockets
-    socketManager.initialize(server);
-    console.log(`🔌 WebSocket server initialized`);
+    console.log('✅ All routes mounted');
   } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
+    console.error('Failed to mount routes:', error);
   }
 };
 
-// Handle graceful shutdown
+// Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM signal received: closing HTTP server');
+  console.log('SIGTERM received — shutting down gracefully');
   await closeRedis();
   process.exit(0);
 });
-
 process.on('SIGINT', async () => {
-  console.log('SIGINT signal received: closing HTTP server');
   await closeRedis();
   process.exit(0);
 });
 
-// Start the server
-startServer();
+startServer().catch(err => {
+  console.error('Fatal startup error:', err);
+  process.exit(1);
+});
