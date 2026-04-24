@@ -2,12 +2,18 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
+// Resolve the monorepo root — works both locally (2 levels up) and on Vercel
+const monorepoRoot = path.resolve(__dirname, '../../');
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@protecht-bim/shared-types': path.resolve(__dirname, '../../libs/shared-types/src/index.ts'),
+      '@protecht-bim/shared-types': path.resolve(
+        monorepoRoot,
+        'libs/shared-types/src/index.ts'
+      ),
     },
   },
   server: {
@@ -28,6 +34,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -36,10 +43,13 @@ export default defineConfig({
           if (id.includes('gantt-task-react')) return 'gantt';
           if (id.includes('date-fns')) return 'date-utils';
           if (id.includes('@tanstack/react-query')) return 'query';
+          if (id.includes('three') || id.includes('web-ifc')) return 'bim';
+          if (id.includes('recharts')) return 'charts';
+          if (id.includes('socket.io')) return 'realtime';
         },
       },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 1500,
   },
   test: {
     globals: true,
