@@ -140,6 +140,30 @@ const LoginPage: React.FC = () => {
           </form>
         </div>
 
+
+        {/* Demo Credentials */}
+        <div className="rounded-xl border border-[#1E3A5F] bg-[#0A1929] p-4 text-sm">
+          <p className="text-blue-300 font-semibold mb-2 flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            Demo Credentials
+          </p>
+          <div className="space-y-1.5 text-gray-400">
+            <div className="flex justify-between"><span>Admin:</span><span className="text-gray-200 font-mono text-xs">admin@protecht.demo</span></div>
+            <div className="flex justify-between"><span>PM:</span><span className="text-gray-200 font-mono text-xs">pm@protecht.demo</span></div>
+            <div className="flex justify-between"><span>Engineer:</span><span className="text-gray-200 font-mono text-xs">eng@protecht.demo</span></div>
+            <div className="flex justify-between border-t border-[#1E3A5F] pt-1.5 mt-1.5">
+              <span>Password (all):</span>
+              <button
+                type="button"
+                onClick={() => { setEmail('admin@protecht.demo'); setPassword('Demo1234!'); }}
+                className="text-primary-400 font-mono text-xs hover:text-primary-300 underline"
+              >
+                Demo1234! (click to fill)
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Sign Up Link */}
         <div className="text-center">
           <p className="text-text-secondary">

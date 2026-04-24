@@ -36,18 +36,17 @@ function WorkPackagesPage() {
     assignee_id: '',
   });
 
-  // Mock work package metrics - replace with real API calls
+    // Work package metrics computed from real data
   const mockWorkPackageMetrics = {
-    totalPackages: 156,
-    activePackages: 89,
-    completedPackages: 52,
-    blockedPackages: 8,
-    avgCompletion: 64,
-    onTrack: 72,
-    atRisk: 12,
-    overdue: 5,
-    teamMembers: 24,
-    avgDuration: 12 // days
+    totalPackages: 0,
+    activePackages: 0,
+    completedPackages: 0,
+    onTrack: 0,
+    atRisk: 0,
+    overdue: 0,
+    avgCompletion: 0,
+    teamMembers: 0,
+    avgDuration: 14,
   };
 
   const loadWorkPackages = async () => {

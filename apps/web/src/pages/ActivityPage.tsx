@@ -14,15 +14,15 @@ export const ActivityPage: React.FC<ActivityPageProps> = ({ projectId }) => {
   const navigate = useNavigate();
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(projectId);
 
-  // Mock activity metrics - replace with real API calls
+    // Activity metrics - will be replaced by real feed data below
   const mockActivityMetrics = {
-    totalActivities: 1247,
-    todayActivities: 89,
-    activeUsers: 24,
-    avgResponseTime: 12, // minutes
-    fileChanges: 156,
-    workPackageUpdates: 234,
-    criticalAlerts: 5
+    totalActivities: 0,
+    todayActivities: 0,
+    activeUsers: 0,
+    avgResponseTime: 0,
+    criticalAlerts: 0,
+    fileChanges: 0,
+    workPackageUpdates: 0,
   };
 
   useEffect(() => {

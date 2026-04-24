@@ -24,18 +24,18 @@ function ProjectsPage() {
     search: '',
   });
 
-  // Mock portfolio metrics - replace with real API calls
+    // Portfolio metrics computed from real project list
   const mockPortfolioMetrics = {
-    totalProjects: 24,
-    activeProjects: 18,
-    totalValue: 45000000,
-    totalBudget: 38500000,
-    avgCompletion: 67,
-    onTrack: 15,
-    atRisk: 3,
-    delayed: 2,
-    teamMembers: 156,
-    avgUtilization: 82
+    totalProjects: projects.length,
+    activeProjects: projects.filter((p: any) => p.status === 'active').length,
+    totalValue: 0,
+    totalBudget: 0,
+    avgCompletion: 0,
+    onTrack: projects.filter((p: any) => p.status === 'active').length,
+    atRisk: 0,
+    delayed: 0,
+    teamMembers: 0,
+    avgUtilization: 0,
   };
 
   const loadProjects = async () => {

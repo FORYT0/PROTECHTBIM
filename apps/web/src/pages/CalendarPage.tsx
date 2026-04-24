@@ -31,16 +31,15 @@ const CalendarPage: React.FC = () => {
   // Get project ID from URL params
   const projectId = searchParams.get('project_id') || undefined;
 
-  // Mock calendar metrics - replace with real API calls
+    // Calendar metrics
   const mockCalendarMetrics = {
-    totalEvents: 89,
-    thisWeek: 24,
-    thisMonth: 89,
-    overdue: 5,
-    upcoming: 18,
-    completed: 52,
-    avgDuration: 8, // days
-    utilizationRate: 76
+    totalEvents: 0,
+    upcoming: 0,
+    completed: 0,
+    overdue: 0,
+    thisWeek: 0,
+    utilizationRate: 0,
+    avgDuration: 0,
   };
 
   // Load work packages

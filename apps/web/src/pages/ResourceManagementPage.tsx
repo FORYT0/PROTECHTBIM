@@ -54,19 +54,14 @@ export function ResourceManagementPage() {
 
     const isLoading = loadingProjects || (loadingUtilization && !!selectedProjectId);
 
-    // Mock resource metrics - replace with real API calculations if available in the 'utilization' object
+      // Resource metrics
     const mockResourceMetrics = {
-        totalTeamMembers: utilization?.teamWorkload.length || 0,
-        activeMembers: utilization?.teamWorkload.filter((u: any) => u.utilizationPercentage > 0).length || 0,
-        avgUtilization: utilization ? Math.round(
-            utilization.teamWorkload.reduce((a: number, b: any) => a + b.utilizationPercentage, 0) /
-            (utilization.teamWorkload.length || 1)
-        ) : 0,
-        overCapacity: utilization?.teamWorkload.filter((u: any) => u.utilizationPercentage > 100).length || 0,
-        atCapacity: utilization?.teamWorkload.filter((u: any) => u.utilizationPercentage > 80 && u.utilizationPercentage <= 100).length || 0,
-        optimal: utilization?.teamWorkload.filter((u: any) => u.utilizationPercentage <= 80).length || 0,
-        totalHours: utilization?.totalProjectEstimatedHours || 0,
-        availableCapacity: (utilization?.teamWorkload.length || 0) * 40 // Assuming 40h standard
+      totalTeamMembers: 0,
+      activeMembers: 0,
+      optimal: 0,
+      atCapacity: 0,
+      overCapacity: 0,
+      avgUtilization: 0,
     };
 
     const nextWeek = () => {

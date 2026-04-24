@@ -20,12 +20,12 @@ export const WikiPageBoard: React.FC = () => {
     const [isCreating, setIsCreating] = useState(false);
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-    // Mock wiki metrics - replace with real API calls
+      // Wiki metrics
     const mockWikiMetrics = {
-        totalPages: tree.length,
-        recentUpdates: 8,
-        contributors: 12,
-        avgReadTime: 5 // minutes
+      totalPages: 0,
+      contributors: 0,
+      avgReadTime: 0,
+      recentEdits: 0,
     };
 
     const loadWiki = useCallback(async () => {

@@ -9,6 +9,8 @@ import ICalendarSubscription from '../components/ICalendarSubscription';
 import { InteractiveCard } from '../components/InteractiveCard';
 import BudgetSetupModal, { BudgetData } from '../components/BudgetSetupModal';
 import { getAuthToken } from '../utils/api';
+import { dashboardService, DashboardData } from '../services/dashboardService';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Calendar, Clock, DollarSign, Users, Package, AlertTriangle, 
   FileText, CheckCircle, XCircle, AlertCircle,
@@ -85,6 +87,15 @@ function ProjectDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+
+  // Real dashboard data from API
+  const { data: dashboard } = useQuery<DashboardData>({
+    queryKey: ['project-dashboard', id],
+    queryFn: () => dashboardService.getProjectDashboard(id!),
+    enabled: !!id,
+    staleTime: 30_000,
+    retry: 1,
+  });
 
   // Mock data for demonstration - replace with real API calls
   const mockKPIs = {

@@ -120,7 +120,7 @@ async function seed() {
       wp = wpRepo.create({
         subject: p.subject, projectId: pid,
         type: WorkPackageType.PHASE, priority: Priority.HIGH,
-        status: p.status, percentageDone: p.pct,
+        status: p.status, progressPercent: p.pct,
         assigneeId: eng.id,
         startDate: sd, dueDate: ed,
         estimatedHours: p.est, spentHours: p.act,
@@ -403,8 +403,7 @@ async function seed() {
     const cols = ['Backlog', 'In Progress', 'Under Review', 'Done'];
     for (let i = 0; i < cols.length; i++) {
       await colRepo.save(colRepo.create({
-        name: cols[i], boardId: board.id, position: i,
-      } as any));
+        name: cols[i], boardId: board.id, position: i, } as any));
     }
     console.log(`   ✅ Sprint + 4-column board\n`);
   } else {
