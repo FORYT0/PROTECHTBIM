@@ -15,7 +15,7 @@ class SocketManager {
     private userSockets: Map<string, string[]> = new Map();
 
     public initialize(server: HttpServer): void {
-        const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim()).filter(Boolean);
+        const corsOrigins = (process.env.CORS_ORIGIN || '').split(',').map(o => o.trim().replace(/\/+$/, '')).filter(Boolean);
         const allowedOrigins = (origin: string) => {
             if (!origin) return true;
             if (corsOrigins.includes(origin)) return true;

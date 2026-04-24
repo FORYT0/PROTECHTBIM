@@ -56,7 +56,7 @@ let startupError: string | null = null;
 // We NEVER throw on unknown origins — we just omit the header so the
 // browser's same-origin check rejects it naturally (no 500/503).
 const corsOriginList = (process.env.CORS_ORIGIN || '')
-  .split(',').map(o => o.trim()).filter(Boolean);
+  .split(',').map(o => o.trim().replace(/\/+$/, '')).filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
