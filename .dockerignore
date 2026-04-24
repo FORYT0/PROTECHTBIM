@@ -1,60 +1,51 @@
-# Dependencies
+# ── Dependencies (rebuilt in Docker) ──────────────────────────────
 node_modules
 npm-debug.log
 yarn-error.log
-yarn.lock
 
-# Build outputs
+# ── Build outputs (built fresh in Docker) ─────────────────────────
 dist
 build
+dist-bundle
 *.tsbuildinfo
 
-# Environment files
+# ── Environment files (set via Railway env vars) ──────────────────
 .env
 .env.local
 .env.*.local
 apps/api/.env
 
-# IDE
+# ── IDE & OS noise ─────────────────────────────────────────────────
 .vscode
 .idea
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Git
+# ── Git ────────────────────────────────────────────────────────────
 .git
-.gitignore
 .gitattributes
 
-# Documentation
-*.md
-!README.md
-
-# Test files
-**/*.test.ts
-**/*.spec.ts
-coverage
-.nyc_output
-
-# CI/CD
+# ── CI/CD & docs ──────────────────────────────────────────────────
 .github
 .gitlab-ci.yml
 .travis.yml
 
-# Nx cache
+# ── Nx cache ──────────────────────────────────────────────────────
 .nx
 .cache
 
-# Logs
+# ── Logs & temp ───────────────────────────────────────────────────
 logs
 *.log
-
-# Temporary files
 tmp
 temp
 *.tmp
+coverage
+.nyc_output
+
+# ── Web build (not needed for API) ────────────────────────────────
+apps/web/dist
+apps/web/node_modules

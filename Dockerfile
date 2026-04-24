@@ -2,38 +2,42 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling in containers
+# Install build tools needed by native addons (bcrypt uses node-gyp)
 RUN apk add --no-cache dumb-init python3 make g++
 
-# Copy package files first for layer caching
-COPY package*.json ./
-COPY apps/api/package*.json ./apps/api/
-COPY libs/shared-utils/package*.json ./libs/shared-utils/
-COPY libs/shared-types/package*.json ./libs/shared-types/
+# ── Layer 1: root workspace package files ──────────────────────────
+COPY package.json package-lock.json* ./
 
-# Install ALL dependencies including devDeps (need esbuild)
-RUN npm install --include=dev
+# ── Layer 2: workspace member package files ────────────────────────
+COPY apps/api/package.json ./apps/api/
+COPY libs/shared-utils/package.json ./libs/shared-utils/
+COPY libs/shared-types/package.json ./libs/shared-types/
 
-# Copy source
+# ── Install ALL deps including devDeps (esbuild is a devDep) ───────
+# NODE_ENV must NOT be production here or npm skips devDeps
+RUN NODE_ENV=development npm install --include=dev
+
+# ── Layer 3: full source ───────────────────────────────────────────
 COPY . .
 
-# Build the bundle
+# ── Build: esbuild bundles everything into one CJS file ───────────
 RUN node apps/api/scripts/build-bundle.js
 
-# Remove devDependencies to slim image
+# ── Slim: remove devDeps after build ──────────────────────────────
 RUN npm prune --omit=dev
 
-# Non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
+# Non-root for security
+RUN addgroup -g 1001 -S nodejs \
+ && adduser -S nodejs -u 1001 \
+ && chown -R nodejs:nodejs /app
 
 USER nodejs
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=10 \
-    CMD node -e "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+# Health check — allows 60s for DB to connect on cold start
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=8 \
+    CMD node -e "require('http').get('http://localhost:3000/health',r=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"
 
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "apps/api/dist-bundle/main.js"]
