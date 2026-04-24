@@ -38,60 +38,73 @@ import { DelayEvent } from '../entities/DelayEvent';
 import { SitePhoto } from '../entities/SitePhoto';
 import { Snag } from '../entities/Snag';
 
-// Load environment variables
 dotenv.config();
 
-// Support Railway's DATABASE_URL connection string
-const dbUrl = process.env.DATABASE_URL;
+const ALL_ENTITIES = [
+  User, UserGroup, Role, Permission, Portfolio, Program, Project,
+  WorkPackage, WorkPackageRelation, WorkPackageWatcher, WorkCalendar,
+  Baseline, BaselineWorkPackage, Board, BoardColumn, Sprint, SprintBurndown,
+  TimeEntry, CostEntry, CostCode, Vendor, ResourceRate, Budget, BudgetLine,
+  ActivityLog, Comment, Attachment, WikiPage, Contract, ChangeOrder,
+  ChangeOrderCostLine, PaymentCertificate, DailyReport, DelayEvent, SitePhoto, Snag,
+];
+
+// Railway provides DATABASE_URL (internal) or DATABASE_PUBLIC_URL (external proxy).
+// When running inside Railway, the internal URL is preferred. Accept both.
+const dbUrl =
+  process.env.DATABASE_URL ||
+  process.env.DATABASE_PUBLIC_URL ||
+  (process.env.PGHOST
+    ? `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT || 5432}/${process.env.PGDATABASE || process.env.POSTGRES_DB}`
+    : null);
+
+// Always synchronize schema — safe because we use tsx (no compiled migrations).
+// Tables are created/updated automatically on every start.
+const SYNC = true;
 
 export const dataSourceOptions: DataSourceOptions = dbUrl
   ? {
       type: 'postgres',
       url: dbUrl,
-      entities: [User, UserGroup, Role, Permission, Portfolio, Program, Project, WorkPackage, WorkPackageRelation, WorkPackageWatcher, WorkCalendar, Baseline, BaselineWorkPackage, Board, BoardColumn, Sprint, SprintBurndown, TimeEntry, CostEntry, CostCode, Vendor, ResourceRate, Budget, BudgetLine, ActivityLog, Comment, Attachment, WikiPage, Contract, ChangeOrder, ChangeOrderCostLine, PaymentCertificate, DailyReport, DelayEvent, SitePhoto, Snag],
-      migrations: [
-        process.env.NODE_ENV === 'production'
-          ? 'dist/src/migrations/*.js'
-          : 'src/migrations/*.ts'
-      ],
-      synchronize: process.env.NODE_ENV !== 'production',
-      logging: process.env.NODE_ENV === 'development',
+      entities: ALL_ENTITIES,
+      synchronize: SYNC,
+      logging: false,
       ssl: { rejectUnauthorized: false },
-      extra: { max: 20, min: 2, idleTimeoutMillis: 30000, connectionTimeoutMillis: 5000 },
+      extra: {
+        max: 10,
+        min: 1,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+      },
     }
   : {
-  type: 'postgres',
-  host: process.env.DATABASE_HOST || 'localhost',
-  port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-  username: process.env.DATABASE_USER || 'postgres',
-  password: process.env.DATABASE_PASSWORD || 'postgres',
-  database: process.env.DATABASE_NAME || 'protecht_bim',
-  entities: [User, UserGroup, Role, Permission, Portfolio, Program, Project, WorkPackage, WorkPackageRelation, WorkPackageWatcher, WorkCalendar, Baseline, BaselineWorkPackage, Board, BoardColumn, Sprint, SprintBurndown, TimeEntry, CostEntry, CostCode, Vendor, ResourceRate, Budget, BudgetLine, ActivityLog, Comment, Attachment, WikiPage, Contract, ChangeOrder, ChangeOrderCostLine, PaymentCertificate, DailyReport, DelayEvent, SitePhoto, Snag],
-  migrations: [
-    process.env.NODE_ENV === 'production'
-      ? 'dist/src/migrations/*.js'
-      : 'src/migrations/*.ts'
-  ],
-  synchronize: process.env.NODE_ENV !== 'production',
-  logging: process.env.NODE_ENV === 'development',
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  extra: { max: 20, min: 2, idleTimeoutMillis: 30000, connectionTimeoutMillis: 5000 },
-};
+      type: 'postgres',
+      host:     process.env.DATABASE_HOST || 'localhost',
+      port:     parseInt(process.env.DATABASE_PORT || '5432', 10),
+      username: process.env.DATABASE_USER || 'postgres',
+      password: process.env.DATABASE_PASSWORD || 'postgres',
+      database: process.env.DATABASE_NAME || 'protecht_bim',
+      entities: ALL_ENTITIES,
+      synchronize: SYNC,
+      logging: false,
+      ssl: false,
+      extra: {
+        max: 10,
+        min: 1,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+      },
+    };
 
-// Create and export the data source
 export const AppDataSource = new DataSource(dataSourceOptions);
 
-// Initialize the data source
 export const initializeDatabase = async (): Promise<DataSource> => {
-  try {
-    if (!AppDataSource.isInitialized) {
-      await AppDataSource.initialize();
-      console.log('✅ Database connection established successfully');
-      console.log(`📊 Connected to: ${(dataSourceOptions as any).database}@${(dataSourceOptions as any).host}:${(dataSourceOptions as any).port}`);
-    }
-    return AppDataSource;
-  } catch (error) {
-    console.error('❌ Error during database initialization:', error);
-    throw error;
+  if (!AppDataSource.isInitialized) {
+    const urlUsed = (dataSourceOptions as any).url ||
+      `${(dataSourceOptions as any).host}:${(dataSourceOptions as any).port}/${(dataSourceOptions as any).database}`;
+    console.log(`🔌 Connecting to DB: ${urlUsed.replace(/:([^:@]+)@/, ':***@')}`);
+    await AppDataSource.initialize();
+    console.log('✅ Database connected — schema synchronised');
   }
+  return AppDataSource;
 };

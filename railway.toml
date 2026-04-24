@@ -1,9 +1,9 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install --include=dev"
+buildCommand = "npm install --include=dev && node apps/api/scripts/build-bundle.js"
 
 [deploy]
-startCommand = "node node_modules/.bin/tsx apps/api/src/main.ts"
+startCommand = "node apps/api/dist-bundle/main.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
 healthcheckPath = "/health"
