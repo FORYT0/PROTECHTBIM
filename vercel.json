@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "cd apps/web && npm install && npm run build",
+  "buildCommand": "cd apps/web && npm install && npx --yes vite build",
   "outputDirectory": "apps/web/dist",
   "installCommand": "npm install --ignore-scripts",
   "framework": null,
