@@ -1,6 +1,6 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install --include=dev && node apps/api/scripts/build-bundle.js"
+buildCommand = "npm install --include=dev && node apps/api/scripts/build-bundle.js && node apps/api/scripts/build-seed.js"
 
 [deploy]
 startCommand = "node apps/api/dist-bundle/main.js"
