@@ -44,3 +44,14 @@ Thumbs.db
 
 # API esbuild bundle
 dist-bundle
+
+# Vite pre-build copies
+apps/web/libs/
+
+# Temp scripts
+audit*.py
+fix_*.py
+get_*.py
+check_*.py
+test_*.py
+patch_*.py

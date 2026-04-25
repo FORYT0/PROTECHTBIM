@@ -1,32 +1,33 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
 
-// Resolve the monorepo root — works both locally (2 levels up) and on Vercel
-const monorepoRoot = path.resolve(__dirname, '../../');
+// Resolve shared-types lib — works in 3 scenarios:
+// 1. Local dev: monorepo root is ../../ from apps/web
+// 2. Vercel with root=apps/web: pre-build.js copied libs/ into apps/web/libs/
+// 3. Vercel from repo root: monorepo root is ./
+const candidates = [
+  path.resolve(__dirname, '../../libs/shared-types/src/index.ts'),   // local dev / repo root
+  path.resolve(__dirname, './libs/shared-types/src/index.ts'),        // Vercel: pre-build copied
+  path.resolve(__dirname, '../../../libs/shared-types/src/index.ts'), // fallback
+];
+const sharedTypesPath = candidates.find(p => fs.existsSync(p))
+  ?? candidates[0]; // default to local dev path if none found yet (build will fail with clear error)
 
-// https://vitejs.dev/config/
+console.log('[vite] shared-types resolved to:', sharedTypesPath);
+
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@protecht-bim/shared-types': path.resolve(
-        monorepoRoot,
-        'libs/shared-types/src/index.ts'
-      ),
+      '@protecht-bim/shared-types': sharedTypesPath,
     },
   },
   server: {
     port: 8081,
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Embedder-Policy': 'require-corp',
-    },
     proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-      },
+      '/api': { target: 'http://localhost:3000', changeOrigin: true },
     },
   },
   optimizeDeps: {

@@ -78,15 +78,6 @@ export class SprintService {
     projectId: string,
     options: ListSprintsOptions = {}
   ): Promise<{ sprints: Sprint[]; total: number }> {
-    // Verify project exists
-    const project = await this.projectRepository.findOne({
-      where: { id: projectId },
-    });
-
-    if (!project) {
-      throw new Error('Project not found');
-    }
-
     const { status, page = 1, perPage = 50 } = options;
 
     const queryBuilder = this.sprintRepository

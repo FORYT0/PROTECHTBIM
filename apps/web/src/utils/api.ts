@@ -1,79 +1,53 @@
-// In production (same-origin), use relative URL so it works regardless of domain.
-// In development, fall back to localhost:3000.
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
+const API_BASE_URL = import.meta.env.VITE_API_URL ||
   (import.meta.env.PROD ? '/api/v1' : 'http://localhost:3000/api/v1');
 
-console.log('🔧 API Configuration:', {
-  VITE_API_URL: import.meta.env.VITE_API_URL,
-  API_BASE_URL,
-  mode: import.meta.env.MODE,
-});
+// Only log in development
+const isDev = import.meta.env.DEV;
+if (isDev) {
+  console.log('[API] Base URL:', API_BASE_URL);
+}
 
 export const getAuthToken = (): string | null => {
-  const tokens = localStorage.getItem('auth_tokens');
-  if (!tokens) return null;
-
   try {
-    const parsed = JSON.parse(tokens);
-    return parsed.accessToken;
-  } catch {
-    return null;
-  }
+    const t = localStorage.getItem('auth_tokens');
+    return t ? JSON.parse(t).accessToken : null;
+  } catch { return null; }
 };
 
 export const apiRequest = async (
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  timeoutMs = 30000
 ): Promise<Response> => {
   const token = getAuthToken();
-  const fullUrl = `${API_BASE_URL}${endpoint}`;
+  const url = `${API_BASE_URL}${endpoint}`;
 
   const headers: Record<string, string> = {
     ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string>),
   };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  console.log('🌐 API Request:', {
-    url: fullUrl,
-    method: options.method || 'GET',
-    hasToken: !!token,
-    headers,
-  });
+  // Abort after timeoutMs (default 30s)
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    console.log('⏳ Sending request...');
-    
-    const response = await fetch(fullUrl, {
-      ...options,
-      headers,
-    });
+    const response = await fetch(url, { ...options, headers, signal: controller.signal });
+    clearTimeout(timer);
 
-    console.log('✅ API Response:', {
-      url: fullUrl,
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok,
-    });
-
-    // Handle token expiration
     if (response.status === 401) {
-      // Clear auth data and redirect to login
       localStorage.removeItem('auth_tokens');
       localStorage.removeItem('auth_user');
       window.location.href = '/login';
     }
-
     return response;
-  } catch (error) {
-    console.error('❌ API Request Failed:', {
-      url: fullUrl,
-      error: error instanceof Error ? error.message : error,
-      errorType: error instanceof TypeError ? 'Network Error' : 'Unknown Error',
-    });
+  } catch (error: any) {
+    clearTimeout(timer);
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timeout after ${timeoutMs / 1000}s: ${url}`);
+    }
+    if (isDev) console.error('[API] Request failed:', url, error.message);
     throw error;
   }
 };
