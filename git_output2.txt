@@ -1,5 +1,8 @@
-=== FIX CO ENTITY ===
-NOT FOUND - showing context:
-"ders')\r\n@Index(['projectId', 'status'])\r\n@Index(['contractId'])\r\n@Index(['changeNumber'], { unique: true })\r\nexport class ChangeOrder {\r\n  @PrimaryGeneratedColumn('uuid')\r\n  id!: string;\r\n\r\n  @Column("
+=== REBUILD + COMMIT ===
 🚀 Start: node apps\api\dist-bundle\main.js
 
+[main 99fe834] fix: ChangeOrder.contractId nullable in entity (direct file write)
+ 1 file changed, 139 insertions(+), 139 deletions(-)
+To https://github.com/FORYT0/PROTECHTBIM.git
+   afb875f..99fe834  main -> main
+DONE
