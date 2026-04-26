@@ -1,0 +1,21 @@
+$kind: http-request
+name: 'Create Resource Rate'
+method: POST
+url: '{{baseUrl}}/api/v1/resource-rates'
+order: 12000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "user_id": "{{userId}}",
+      "role": "engineer",
+      "hourly_rate": 75,
+      "cost_category": "labor",
+      "effective_from": "2025-01-01",
+      "is_active": true
+    }

@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Log Time'
+method: POST
+url: '{{baseUrl}}/api/v1/time_entries'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "work_package_id": "{{workPackageId}}",
+      "hours": 4,
+      "date": "2025-02-01",
+      "comment": "Completed foundation survey",
+      "billable": true
+    }

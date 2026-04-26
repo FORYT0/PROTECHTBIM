@@ -1,0 +1,29 @@
+$kind: http-request
+name: 'Create Project Budget'
+method: POST
+url: '{{baseUrl}}/api/v1/projects/:projectId/budget'
+order: 9000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'
+body:
+  type: json
+  content: |-
+    {
+      "name": "Project Budget 2025",
+      "total_budget": 500000,
+      "currency": "USD",
+      "start_date": "2025-01-01",
+      "end_date": "2025-12-31",
+      "budget_lines": [
+        {
+          "cost_code_id": "{{costCodeId}}",
+          "budgeted_amount": 100000
+        }
+      ]
+    }

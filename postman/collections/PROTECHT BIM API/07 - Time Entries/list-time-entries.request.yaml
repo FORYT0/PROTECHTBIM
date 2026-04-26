@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'List Time Entries'
+method: GET
+url: '{{baseUrl}}/api/v1/time_entries'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+queryParams:
+  - key: work_package_id
+    value: '{{workPackageId}}'

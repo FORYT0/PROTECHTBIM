@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Upload Attachment'
+method: POST
+url: '{{baseUrl}}/api/v1/attachments/upload'
+order: 3000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+body:
+  type: formdata
+  content:
+    - key: file
+      type: file
+      src: ''
+    - key: entityType
+      type: text
+      value: WorkPackage
+    - key: entityId
+      type: text
+      value: '{{workPackageId}}'

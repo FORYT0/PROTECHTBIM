@@ -1,0 +1,13 @@
+$kind: http-request
+name: 'List Attachments'
+method: GET
+url: '{{baseUrl}}/api/v1/attachments/:entityType/:entityId'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: entityType
+    value: WorkPackage
+  - key: entityId
+    value: '{{workPackageId}}'

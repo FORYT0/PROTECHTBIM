@@ -1,0 +1,5 @@
+$kind: http-request
+name: 'API Root'
+method: GET
+url: '{{baseUrl}}/api/v1'
+order: 2000

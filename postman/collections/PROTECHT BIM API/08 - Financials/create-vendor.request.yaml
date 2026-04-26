@@ -1,0 +1,21 @@
+$kind: http-request
+name: 'Create Vendor'
+method: POST
+url: '{{baseUrl}}/api/v1/vendors'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "vendor_name": "ABC Construction Ltd",
+      "vendor_type": "subcontractor",
+      "contact_person": "Jane Smith",
+      "email": "jane@abcconstruction.com",
+      "phone": "+1-555-0100",
+      "is_active": true
+    }

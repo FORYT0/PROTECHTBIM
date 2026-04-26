@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Update Wiki Page'
+method: PATCH
+url: '{{baseUrl}}/api/v1/wiki/:id'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: id
+    value: '{{wikiPageId}}'
+body:
+  type: json
+  content: |-
+    {
+      "title": "Updated Project Overview",
+      "content": "Updated content here."
+    }

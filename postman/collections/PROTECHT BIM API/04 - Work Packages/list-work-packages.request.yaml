@@ -1,0 +1,15 @@
+$kind: http-request
+name: 'List Work Packages'
+method: GET
+url: '{{baseUrl}}/api/v1/work_packages'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+queryParams:
+  - key: project_id
+    value: '{{projectId}}'
+  - key: page
+    value: '1'
+  - key: per_page
+    value: '20'

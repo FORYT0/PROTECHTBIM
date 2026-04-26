@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Create Board'
+method: POST
+url: '{{baseUrl}}/api/v1/projects/:id/boards'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: id
+    value: '{{projectId}}'
+body:
+  type: json
+  content: |-
+    {
+      "name": "Kanban Board",
+      "board_type": "kanban"
+    }

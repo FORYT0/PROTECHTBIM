@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Approve Change Order'
+method: POST
+url: '{{baseUrl}}/api/v1/change-orders/:id/approve'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: id
+    value: '{{changeOrderId}}'

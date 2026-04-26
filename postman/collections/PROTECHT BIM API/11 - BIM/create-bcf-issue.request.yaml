@@ -1,0 +1,22 @@
+$kind: http-request
+name: 'Create BCF Issue'
+method: POST
+url: '{{baseUrl}}/api/v1/projects/:projectId/bim/bcf'
+order: 6000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'
+body:
+  type: json
+  content: |-
+    {
+      "title": "Pipe clash with beam",
+      "description": "HVAC pipe clashes with structural beam at grid A3",
+      "priority": "high",
+      "assignedTo": "{{userId}}"
+    }

@@ -1,0 +1,8 @@
+$kind: http-request
+name: 'List Change Orders'
+method: GET
+url: '{{baseUrl}}/api/v1/change-orders'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'

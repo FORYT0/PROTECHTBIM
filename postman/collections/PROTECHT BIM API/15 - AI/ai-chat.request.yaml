@@ -1,0 +1,21 @@
+$kind: http-request
+name: 'AI Chat (Project Manager)'
+method: POST
+url: '{{baseUrl}}/api/v1/ai/chat'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "messages": [
+        {
+          "role": "user",
+          "content": "What are the main risks for a construction project that is behind schedule?"
+        }
+      ]
+    }

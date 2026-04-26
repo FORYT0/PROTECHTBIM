@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Get Baseline'
+method: GET
+url: '{{baseUrl}}/api/v1/baselines/:id'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: id
+    value: '{{baselineId}}'

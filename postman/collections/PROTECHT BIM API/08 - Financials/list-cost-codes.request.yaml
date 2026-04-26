@@ -1,0 +1,8 @@
+$kind: http-request
+name: 'List Cost Codes'
+method: GET
+url: '{{baseUrl}}/api/v1/cost-codes'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'

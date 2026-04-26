@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Detect Circular Dependencies'
+method: GET
+url: '{{baseUrl}}/api/v1/projects/:projectId/scheduling/circular-dependencies'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'

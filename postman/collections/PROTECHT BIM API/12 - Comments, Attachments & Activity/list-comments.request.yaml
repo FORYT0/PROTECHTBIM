@@ -1,0 +1,13 @@
+$kind: http-request
+name: 'List Comments'
+method: GET
+url: '{{baseUrl}}/api/v1/comments/:entityType/:entityId'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: entityType
+    value: WorkPackage
+  - key: entityId
+    value: '{{workPackageId}}'

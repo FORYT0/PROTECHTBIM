@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Update Time Entry'
+method: PATCH
+url: '{{baseUrl}}/api/v1/time_entries/:id'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: id
+    value: '{{timeEntryId}}'
+body:
+  type: json
+  content: |-
+    {
+      "hours": 6,
+      "comment": "Updated hours"
+    }

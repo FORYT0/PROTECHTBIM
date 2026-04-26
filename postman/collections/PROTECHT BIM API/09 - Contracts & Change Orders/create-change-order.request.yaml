@@ -1,0 +1,23 @@
+$kind: http-request
+name: 'Create Change Order'
+method: POST
+url: '{{baseUrl}}/api/v1/change-orders'
+order: 6000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "projectId": "{{projectId}}",
+      "contractId": "{{contractId}}",
+      "title": "Additional Foundation Work",
+      "description": "Unforeseen soil conditions require deeper foundations",
+      "reason": "unforeseen_conditions",
+      "costImpact": 25000,
+      "scheduleImpactDays": 7,
+      "priority": "high"
+    }

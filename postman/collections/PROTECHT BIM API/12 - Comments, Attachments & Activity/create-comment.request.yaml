@@ -1,0 +1,18 @@
+$kind: http-request
+name: 'Create Comment'
+method: POST
+url: '{{baseUrl}}/api/v1/comments'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "entityType": "WorkPackage",
+      "entityId": "{{workPackageId}}",
+      "content": "This task needs more resources."
+    }

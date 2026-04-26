@@ -1,0 +1,16 @@
+$kind: http-request
+name: 'Get Resource Utilization'
+method: GET
+url: '{{baseUrl}}/api/v1/resources/projects/:projectId/utilization'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'
+queryParams:
+  - key: startDate
+    value: '2025-01-01'
+  - key: endDate
+    value: '2025-12-31'

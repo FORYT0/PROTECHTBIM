@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Transition Project Phase'
+method: POST
+url: '{{baseUrl}}/api/v1/projects/:id/transition-phase'
+order: 6000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: id
+    value: '{{projectId}}'
+body:
+  type: json
+  content: |-
+    {
+      "new_phase": "construction"
+    }

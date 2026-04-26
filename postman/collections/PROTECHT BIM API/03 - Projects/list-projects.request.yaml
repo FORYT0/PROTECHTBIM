@@ -1,0 +1,13 @@
+$kind: http-request
+name: 'List Projects'
+method: GET
+url: '{{baseUrl}}/api/v1/projects'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+queryParams:
+  - key: page
+    value: '1'
+  - key: per_page
+    value: '20'

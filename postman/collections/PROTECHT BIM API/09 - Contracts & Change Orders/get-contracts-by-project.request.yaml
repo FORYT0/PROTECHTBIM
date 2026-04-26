@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Get Contracts by Project'
+method: GET
+url: '{{baseUrl}}/api/v1/contracts/project/:projectId/all'
+order: 3000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'

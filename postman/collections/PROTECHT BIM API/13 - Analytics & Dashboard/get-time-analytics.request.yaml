@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Get Time Analytics'
+method: GET
+url: '{{baseUrl}}/api/v1/projects/:projectId/analytics/time'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'

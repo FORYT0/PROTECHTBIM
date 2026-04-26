@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Refresh Dashboard Cache'
+method: POST
+url: '{{baseUrl}}/api/v1/projects/:projectId/dashboard/refresh'
+order: 8000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'

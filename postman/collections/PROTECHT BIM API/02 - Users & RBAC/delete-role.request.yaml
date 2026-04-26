@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Delete Role (Admin)'
+method: DELETE
+url: '{{baseUrl}}/api/v1/roles/:id'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: id
+    value: '{{roleId}}'

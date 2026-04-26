@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'List Cost Entries'
+method: GET
+url: '{{baseUrl}}/api/v1/cost-entries'
+order: 6000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+queryParams:
+  - key: project_id
+    value: '{{projectId}}'

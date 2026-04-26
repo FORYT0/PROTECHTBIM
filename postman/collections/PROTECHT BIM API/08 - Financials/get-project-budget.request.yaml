@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Get Project Budget'
+method: GET
+url: '{{baseUrl}}/api/v1/projects/:projectId/budget'
+order: 8000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'

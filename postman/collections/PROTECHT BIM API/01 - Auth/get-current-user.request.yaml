@@ -1,0 +1,8 @@
+$kind: http-request
+name: 'Get Current User (me)'
+method: GET
+url: '{{baseUrl}}/api/v1/auth/me'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'

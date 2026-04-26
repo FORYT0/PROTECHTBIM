@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Delete Baseline'
+method: DELETE
+url: '{{baseUrl}}/api/v1/baselines/:id'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: id
+    value: '{{baselineId}}'

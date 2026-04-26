@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Update Work Package'
+method: PATCH
+url: '{{baseUrl}}/api/v1/work_packages/:id'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: id
+    value: '{{workPackageId}}'
+body:
+  type: json
+  content: |-
+    {
+      "status": "in_progress",
+      "progress_percent": 25
+    }

@@ -1,0 +1,24 @@
+$kind: http-request
+name: 'Create Contract'
+method: POST
+url: '{{baseUrl}}/api/v1/contracts'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "projectId": "{{projectId}}",
+      "contractNumber": "CTR-2025-001",
+      "contractType": "lump_sum",
+      "clientName": "City Council",
+      "originalContractValue": 1000000,
+      "originalDurationDays": 365,
+      "startDate": "2025-01-01",
+      "completionDate": "2025-12-31",
+      "currency": "USD"
+    }

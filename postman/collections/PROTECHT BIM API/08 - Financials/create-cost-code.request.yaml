@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Create Cost Code'
+method: POST
+url: '{{baseUrl}}/api/v1/cost-codes'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "code": "01-100",
+      "name": "Site Preparation",
+      "description": "All site preparation activities",
+      "level": 1,
+      "is_active": true
+    }

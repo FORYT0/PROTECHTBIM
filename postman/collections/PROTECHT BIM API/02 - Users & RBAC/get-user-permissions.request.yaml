@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Get User Permissions'
+method: GET
+url: '{{baseUrl}}/api/v1/users/:userId/permissions'
+order: 11000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: userId
+    value: '{{userId}}'

@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'List BIM Models'
+method: GET
+url: '{{baseUrl}}/api/v1/projects/:projectId/bim/models'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'

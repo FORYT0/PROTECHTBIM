@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Get Cost Summary for Project'
+method: GET
+url: '{{baseUrl}}/api/v1/cost-entries/projects/:projectId/summary'
+order: 10000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'

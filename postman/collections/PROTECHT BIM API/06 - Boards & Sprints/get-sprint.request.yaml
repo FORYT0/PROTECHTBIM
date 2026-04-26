@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Get Sprint'
+method: GET
+url: '{{baseUrl}}/api/v1/sprints/:id'
+order: 6000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: id
+    value: '{{sprintId}}'

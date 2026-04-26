@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Assign Permissions to Role (Admin)'
+method: POST
+url: '{{baseUrl}}/api/v1/roles/:id/permissions'
+order: 8000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: id
+    value: '{{roleId}}'
+body:
+  type: json
+  content: |-
+    {
+      "permissionIds": ["{{permissionId}}"]
+    }

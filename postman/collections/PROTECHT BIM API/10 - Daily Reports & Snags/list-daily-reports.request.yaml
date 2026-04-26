@@ -1,0 +1,8 @@
+$kind: http-request
+name: 'List Daily Reports'
+method: GET
+url: '{{baseUrl}}/api/v1/daily-reports'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'

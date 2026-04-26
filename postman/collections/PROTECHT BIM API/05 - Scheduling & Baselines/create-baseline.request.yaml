@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Create Baseline'
+method: POST
+url: '{{baseUrl}}/api/v1/projects/:id/baselines'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: id
+    value: '{{projectId}}'
+body:
+  type: json
+  content: |-
+    {
+      "name": "Baseline v1",
+      "description": "Initial project baseline"
+    }

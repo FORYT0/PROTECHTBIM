@@ -1,0 +1,8 @@
+$kind: http-request
+name: 'List Vendors'
+method: GET
+url: '{{baseUrl}}/api/v1/vendors'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'

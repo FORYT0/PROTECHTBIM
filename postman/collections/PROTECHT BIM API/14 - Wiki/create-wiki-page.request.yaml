@@ -1,0 +1,21 @@
+$kind: http-request
+name: 'Create Wiki Page'
+method: POST
+url: '{{baseUrl}}/api/v1/projects/:projectId/wiki'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: projectId
+    value: '{{projectId}}'
+body:
+  type: json
+  content: |-
+    {
+      "title": "Project Overview",
+      "content": "This page describes the project scope and objectives.",
+      "slug": "project-overview"
+    }

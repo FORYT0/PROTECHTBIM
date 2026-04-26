@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Update Project'
+method: PATCH
+url: '{{baseUrl}}/api/v1/projects/:id'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: id
+    value: '{{projectId}}'
+body:
+  type: json
+  content: |-
+    {
+      "name": "Updated Project Name",
+      "status": "active"
+    }

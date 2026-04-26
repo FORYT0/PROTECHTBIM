@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Search Users'
+method: GET
+url: '{{baseUrl}}/api/v1/users/search'
+order: 1000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+queryParams:
+  - key: q
+    value: john

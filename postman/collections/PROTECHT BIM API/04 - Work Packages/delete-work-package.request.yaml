@@ -1,0 +1,11 @@
+$kind: http-request
+name: 'Delete Work Package'
+method: DELETE
+url: '{{baseUrl}}/api/v1/work_packages/:id'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+pathVariables:
+  - key: id
+    value: '{{workPackageId}}'

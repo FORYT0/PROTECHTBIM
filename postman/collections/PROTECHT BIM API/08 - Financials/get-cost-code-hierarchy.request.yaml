@@ -1,0 +1,8 @@
+$kind: http-request
+name: 'Get Cost Code Hierarchy'
+method: GET
+url: '{{baseUrl}}/api/v1/cost-codes/hierarchy'
+order: 3000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'

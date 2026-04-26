@@ -1,0 +1,21 @@
+$kind: http-request
+name: 'Create Snag'
+method: POST
+url: '{{baseUrl}}/api/v1/snags'
+order: 5000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "projectId": "{{projectId}}",
+      "location": "Block A, Level 2",
+      "description": "Crack in concrete wall",
+      "severity": "medium",
+      "category": "structural",
+      "dueDate": "2025-02-15"
+    }

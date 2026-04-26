@@ -1,0 +1,20 @@
+$kind: http-request
+name: 'Create Project'
+method: POST
+url: '{{baseUrl}}/api/v1/projects'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "New Construction Project",
+      "description": "A sample BIM project",
+      "status": "active",
+      "start_date": "2025-01-01",
+      "end_date": "2025-12-31"
+    }

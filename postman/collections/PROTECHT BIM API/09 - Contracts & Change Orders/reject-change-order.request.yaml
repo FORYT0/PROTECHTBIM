@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Reject Change Order'
+method: POST
+url: '{{baseUrl}}/api/v1/change-orders/:id/reject'
+order: 8000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: id
+    value: '{{changeOrderId}}'
+body:
+  type: json
+  content: |-
+    {
+      "reason": "Budget constraints do not allow this change"
+    }

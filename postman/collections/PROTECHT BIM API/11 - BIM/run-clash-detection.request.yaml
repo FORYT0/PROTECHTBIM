@@ -1,0 +1,17 @@
+$kind: http-request
+name: 'Run Clash Detection'
+method: POST
+url: '{{baseUrl}}/api/v1/bim/clash-detection'
+order: 4000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "modelIds": ["{{modelId1}}", "{{modelId2}}"],
+      "tolerance": 0.01
+    }

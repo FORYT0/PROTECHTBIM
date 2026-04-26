@@ -1,0 +1,25 @@
+$kind: http-request
+name: 'Create Cost Entry'
+method: POST
+url: '{{baseUrl}}/api/v1/cost-entries'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "project_id": "{{projectId}}",
+      "cost_category": "material",
+      "description": "Concrete delivery",
+      "quantity": 10,
+      "unit": "m3",
+      "unit_cost": 150,
+      "total_cost": 1500,
+      "entry_date": "2025-02-01",
+      "payment_status": "pending",
+      "is_billable": true
+    }

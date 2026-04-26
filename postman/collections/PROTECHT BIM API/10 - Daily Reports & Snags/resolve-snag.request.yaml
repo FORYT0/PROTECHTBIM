@@ -1,0 +1,19 @@
+$kind: http-request
+name: 'Resolve Snag'
+method: POST
+url: '{{baseUrl}}/api/v1/snags/:id/resolve'
+order: 7000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+pathVariables:
+  - key: id
+    value: '{{snagId}}'
+body:
+  type: json
+  content: |-
+    {
+      "rectificationCost": 500
+    }

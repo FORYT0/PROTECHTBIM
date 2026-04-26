@@ -1,0 +1,11 @@
+$kind: collection
+name: PROTECHT BIM API
+description: |-
+  Construction Project Management Platform with BIM Integration.
+  Base URL: {{baseUrl}} (default: http://localhost:3000)
+  Authentication: Bearer {{authToken}} on all protected endpoints.
+variables:
+  - key: baseUrl
+    value: 'http://localhost:3000'
+  - key: authToken
+    value: ''

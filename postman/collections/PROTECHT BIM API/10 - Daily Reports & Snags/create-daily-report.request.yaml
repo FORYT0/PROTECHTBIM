@@ -1,0 +1,23 @@
+$kind: http-request
+name: 'Create Daily Report'
+method: POST
+url: '{{baseUrl}}/api/v1/daily-reports'
+order: 2000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "projectId": "{{projectId}}",
+      "reportDate": "2025-02-01",
+      "weather": "sunny",
+      "temperature": 22,
+      "manpowerCount": 15,
+      "equipmentCount": 3,
+      "workCompleted": "Completed foundation excavation for section A",
+      "workPlannedTomorrow": "Begin concrete pouring"
+    }

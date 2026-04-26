@@ -1,0 +1,8 @@
+$kind: http-request
+name: 'List Resource Rates'
+method: GET
+url: '{{baseUrl}}/api/v1/resource-rates'
+order: 11000
+headers:
+  - key: Authorization
+    value: 'Bearer {{authToken}}'
