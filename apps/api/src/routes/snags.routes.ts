@@ -6,26 +6,22 @@ import { SnagSeverity, SnagCategory, SnagStatus } from '../entities/Snag';
 const router = Router();
 const snagService = new SnagService();
 
+// ─── PUBLIC ROUTES (no auth) ─────────────────────────────────────
+
 // Get all snags
 router.get('/', async (req: Request, res: Response) => {
   try {
-    console.log('📝 Fetching all snags');
     const snags = await snagService.getAllSnags();
-    console.log('✅ Found snags:', snags.length);
     res.json({ snags });
   } catch (error: any) {
-    console.error('❌ Error fetching snags:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Create snag (no auth required for testing)
+// Create snag
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId || 'a0077b22-fc68-408c-b1ce-aab3d36855de';
-
-    console.log('📝 Creating snag:', req.body);
-
+    const userId = (req as any).user?.userId || req.body.createdBy;
     const snag = await snagService.createSnag(
       {
         projectId: req.body.projectId,
@@ -41,41 +37,20 @@ router.post('/', async (req: Request, res: Response) => {
       },
       userId
     );
-
-    console.log('✅ Snag created:', snag.id);
     res.status(201).json({ snag });
   } catch (error: any) {
-    console.error('❌ Error creating snag:', error);
     res.status(400).json({ error: error.message });
   }
 });
 
-// All other routes require authentication
-router.use(authenticateToken);
+// ─── SPECIFIC COLLECTION ROUTES (must be before /:id) ────────────
 
-// Get snag by ID
-router.get('/:id', async (req: Request, res: Response) => {
-  try {
-    const snag = await snagService.getSnagById(req.params.id);
-
-    if (!snag) {
-      return res.status(404).json({ error: 'Snag not found' });
-    }
-
-    return res.json({ snag });
-  } catch (error: any) {
-    console.error('Error fetching snag:', error);
-    return res.status(500).json({ error: error.message });
-  }
-});
-
-// Get snags by project
+// Get snags by project — MUST be before /:id
 router.get('/project/:projectId', async (req: Request, res: Response) => {
   try {
     const snags = await snagService.getSnagsByProject(req.params.projectId);
     res.json({ snags });
   } catch (error: any) {
-    console.error('Error fetching snags:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -86,7 +61,6 @@ router.get('/work-package/:workPackageId', async (req: Request, res: Response) =
     const snags = await snagService.getSnagsByWorkPackage(req.params.workPackageId);
     res.json({ snags });
   } catch (error: any) {
-    console.error('Error fetching snags:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -100,8 +74,33 @@ router.get('/project/:projectId/status/:status', async (req: Request, res: Respo
     );
     res.json({ snags });
   } catch (error: any) {
-    console.error('Error fetching snags:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Get snag metrics for project
+router.get('/project/:projectId/metrics', async (req: Request, res: Response) => {
+  try {
+    const metrics = await snagService.getSnagMetrics(req.params.projectId);
+    res.json({ metrics });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── AUTH MIDDLEWARE ──────────────────────────────────────────────
+router.use(authenticateToken);
+
+// ─── INDIVIDUAL RESOURCE ROUTES (after /:id specific routes) ────
+
+// Get snag by ID
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const snag = await snagService.getSnagById(req.params.id);
+    if (!snag) return res.status(404).json({ error: 'Snag not found' });
+    return res.json({ snag });
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -109,7 +108,6 @@ router.get('/project/:projectId/status/:status', async (req: Request, res: Respo
 router.patch('/:id', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
-
     const snag = await snagService.updateSnag(
       req.params.id,
       {
@@ -125,10 +123,8 @@ router.patch('/:id', async (req: Request, res: Response) => {
       },
       userId
     );
-
     res.json({ snag });
   } catch (error: any) {
-    console.error('Error updating snag:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -137,16 +133,11 @@ router.patch('/:id', async (req: Request, res: Response) => {
 router.post('/:id/assign', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
-    const assignedTo = req.body.assignedTo;
-
-    if (!assignedTo) {
-      return res.status(400).json({ error: 'assignedTo is required' });
-    }
-
+    const { assignedTo } = req.body;
+    if (!assignedTo) return res.status(400).json({ error: 'assignedTo is required' });
     const snag = await snagService.assignSnag(req.params.id, assignedTo, userId);
     return res.json({ snag });
   } catch (error: any) {
-    console.error('Error assigning snag:', error);
     return res.status(400).json({ error: error.message });
   }
 });
@@ -156,11 +147,9 @@ router.post('/:id/resolve', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.userId;
     const rectificationCost = req.body.rectificationCost ? parseFloat(req.body.rectificationCost) : undefined;
-
     const snag = await snagService.resolveSnag(req.params.id, userId, rectificationCost);
     res.json({ snag });
   } catch (error: any) {
-    console.error('Error resolving snag:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -172,7 +161,6 @@ router.post('/:id/verify', async (req: Request, res: Response) => {
     const snag = await snagService.verifySnag(req.params.id, userId);
     res.json({ snag });
   } catch (error: any) {
-    console.error('Error verifying snag:', error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -184,19 +172,7 @@ router.post('/:id/close', async (req: Request, res: Response) => {
     const snag = await snagService.closeSnag(req.params.id, userId);
     res.json({ snag });
   } catch (error: any) {
-    console.error('Error closing snag:', error);
     res.status(400).json({ error: error.message });
-  }
-});
-
-// Get snag metrics for project
-router.get('/project/:projectId/metrics', async (req: Request, res: Response) => {
-  try {
-    const metrics = await snagService.getSnagMetrics(req.params.projectId);
-    res.json({ metrics });
-  } catch (error: any) {
-    console.error('Error fetching snag metrics:', error);
-    res.status(500).json({ error: error.message });
   }
 });
 
@@ -207,7 +183,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
     await snagService.deleteSnag(req.params.id, userId);
     res.json({ message: 'Snag deleted successfully' });
   } catch (error: any) {
-    console.error('Error deleting snag:', error);
     res.status(400).json({ error: error.message });
   }
 });
