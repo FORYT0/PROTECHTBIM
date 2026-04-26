@@ -1,0 +1,5 @@
+=== FIX CO ENTITY ===
+NOT FOUND - showing context:
+"ders')\r\n@Index(['projectId', 'status'])\r\n@Index(['contractId'])\r\n@Index(['changeNumber'], { unique: true })\r\nexport class ChangeOrder {\r\n  @PrimaryGeneratedColumn('uuid')\r\n  id!: string;\r\n\r\n  @Column("
+🚀 Start: node apps\api\dist-bundle\main.js
+

@@ -1,18 +1,7 @@
-=== AUTH ROUTE FIX ===
-snags.routes.ts: added optionalAuth middleware
-snags.routes.ts: POST route now has optionalAuth
-daily-reports.routes.ts: added optionalAuth middleware
-daily-reports.routes.ts: POST route now has optionalAuth
-change-orders.routes.ts: added optionalAuth middleware
-change-orders.routes.ts: POST route now has optionalAuth
-contracts.routes.ts: added optionalAuth middleware
-contracts.routes.ts: POST route now has optionalAuth
-
-All route files updated
-
-=== REBUILD ===
-✅ Bundle complete → C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js (646 KB)
-🚀 Start: node apps\api\dist-bundle\main.js
-
-
-=== COMMIT & PUSH ===
+=== WAITING FOR NEW DEPLOY (uptime reset) ===
+  Attempt 1: uptime=313.330286241s
+  Attempt 2: uptime=4.075555572s
+  Attempt 3: uptime=25.421462863s
+  Attempt 4: uptime=47.038281586s
+  Attempt 5: uptime=68.458741438s
+  Attempt 6: uptime=89.875481841s
