@@ -1,28 +1,27 @@
-=== APPLYING SERVICE FIXES ===
-DailyReportService saved
+=== HEALTH ===
+{"status":"=== HEALTH ===
+  200 status=ok db=connected
 
-ChangeOrderService saved
+=== LOGIN ===
+  200
 
-time-entries: GET / auth removed OK
-time-entries route saved
+=== PROJECTS ===
+  200 - 1 projects, pid=fdd1ff34...
 
-Redis: reconnectStrategy updated OK
-Redis config saved
+=== SNAGS ===
+  0 - N/A items
+  Error: {'error': 'The read operation timed out'}
 
-=== ALL FIXES APPLIED ===
+=== DAILY REPORTS ===
+  0 - N/A items
+  Error: {'error': 'The read operation timed out'}
 
-=== REBUILDING API BUNDLE ===
-🔨 Building PROTECHT BIM API bundle...
-   Entry:  C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\src\main.ts
-   Output: C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js
-   Libs:   C:\Users\User\AndroidStudioProjects\PROTECHT BIM\libs
+=== CHANGE ORDERS ===
+  0 - N/A items
+  Error: {'error': 'The read operation timed out'}
 
-  apps\api\dist-bundle\main.js  643.7kb
+=== CONTRACTS ===
+  200 - 0 items
 
-Done in 183ms
-
-✅ Bundle complete → C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js (644 KB)
-🚀 Start: node apps\api\dist-bundle\main.js
-
-
-=== STAGING FILES ===
+=== TIME ENTRIES (no auth) ===
+  200 - 0 items
