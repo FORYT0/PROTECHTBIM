@@ -36,18 +36,19 @@ function WorkPackagesPage() {
     assignee_id: '',
   });
 
-    // Work package metrics computed from real data
+      // Metrics computed from real loaded data
+  const now = new Date();
   const mockWorkPackageMetrics = {
-    totalPackages: 0,
-    activePackages: 0,
-    completedPackages: 0,
-    onTrack: 0,
-    atRisk: 0,
-    overdue: 0,
-    avgCompletion: 0,
-    teamMembers: 0,
+    totalPackages: workPackages.length,
+    activePackages: workPackages.filter((w: any) => ['in_progress','In Progress','open','New'].includes(w.status)).length,
+    completedPackages: workPackages.filter((w: any) => ['closed','Closed','done','Done'].includes(w.status)).length,
+    onTrack: workPackages.filter((w: any) => (w.percentageDone || 0) >= 50).length,
+    atRisk: workPackages.filter((w: any) => w.dueDate && new Date(w.dueDate) < new Date(Date.now() + 7*86400000) && (w.percentageDone || 0) < 80).length,
+    overdue: workPackages.filter((w: any) => w.dueDate && new Date(w.dueDate) < now && (w.percentageDone || 0) < 100).length,
+    avgCompletion: workPackages.length ? Math.round(workPackages.reduce((s: number, w: any) => s + (w.percentageDone || 0), 0) / workPackages.length) : 0,
+    teamMembers: new Set(workPackages.map((w: any) => w.assigneeId).filter(Boolean)).size,
     avgDuration: 14,
-    blockedPackages: 2,
+    blockedPackages: workPackages.filter((w: any) => w.status === 'blocked').length,
   };
 
   const loadWorkPackages = async () => {
@@ -124,7 +125,7 @@ function WorkPackagesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] space-y-6 pb-8">
+    <div className="space-y-5 pb-8 min-w-0">
       {/* WORK PACKAGE COMMAND HEADER */}
       <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
         <div className="flex items-start justify-between">
@@ -161,7 +162,6 @@ function WorkPackagesPage() {
               value={`${mockWorkPackageMetrics.avgCompletion}%`}
               progress={{ value: mockWorkPackageMetrics.avgCompletion, color: "bg-blue-400" }}
               to="/work-packages?sort=completion"
-              className="min-w-[160px]"
             />
 
             <InteractiveCard
@@ -171,7 +171,6 @@ function WorkPackagesPage() {
               value={mockWorkPackageMetrics.onTrack}
               subtitle={`${Math.round((mockWorkPackageMetrics.onTrack / mockWorkPackageMetrics.activePackages) * 100)}% of active`}
               to="/work-packages?filter=on-track"
-              className="min-w-[160px]"
             />
 
             <InteractiveCard
@@ -181,7 +180,6 @@ function WorkPackagesPage() {
               value={mockWorkPackageMetrics.atRisk}
               subtitle="Needs attention"
               to="/work-packages?filter=at-risk"
-              className="min-w-[160px]"
             />
 
             <InteractiveCard
@@ -191,7 +189,6 @@ function WorkPackagesPage() {
               value={mockWorkPackageMetrics.overdue}
               subtitle="Immediate action"
               to="/work-packages?filter=overdue"
-              className="min-w-[160px]"
             />
           </div>
         </div>
