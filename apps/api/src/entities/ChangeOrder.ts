@@ -40,7 +40,6 @@ export enum ChangeOrderPriority {
 
 @Entity('change_orders')
 @Index(['projectId', 'status'])
-@Index(['contractId'])
 @Index(['changeNumber'], { unique: true })
 export class ChangeOrder {
   @PrimaryGeneratedColumn('uuid')
@@ -53,12 +52,13 @@ export class ChangeOrder {
   @JoinColumn({ name: 'projectId' })
   project!: Project;
 
-  @Column('uuid')
-  contractId!: string;
+  // contractId is nullable — change orders can exist without a linked contract
+  @Column({ type: 'uuid', nullable: true })
+  contractId!: string | null;
 
-  @ManyToOne(() => Contract, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Contract, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'contractId' })
-  contract!: Contract;
+  contract!: Contract | null;
 
   @Column({ type: 'varchar', length: 50, unique: true })
   changeNumber!: string;
