@@ -329,7 +329,6 @@ export class SnagService {
   async getSnagsByProject(projectId: string): Promise<Snag[]> {
     return await this.snagRepository.find({
       where: { projectId },
-      relations: ['workPackage', 'assignee', 'creator'],
       order: { createdAt: 'DESC' },
     });
   }

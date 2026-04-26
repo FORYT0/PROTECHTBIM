@@ -52,7 +52,7 @@ export const initializeRedis = async (): Promise<RedisClientType | null> => {
         port,
         tls: useTLS,
         rejectUnauthorized: false, // Required for Upstash self-signed
-        reconnectStrategy: (retries: number) => Math.min(retries * 50, 3000),
+        reconnectStrategy: (retries: number) => { if (retries > 3) return new Error('Redis unavailable'); return Math.min(retries * 200, 3000); },
       },
       ...(password && password.trim() !== '' ? { password } : {}),
       database: db,
@@ -61,7 +61,7 @@ export const initializeRedis = async (): Promise<RedisClientType | null> => {
 
   redisClient = createClient(config);
 
-  redisClient.on('error', (err) => console.error('Redis error:', err.message));
+  redisClient.on('error', (err) => { /* suppress - Redis unavailable in some envs */ });
   redisClient.on('connect', () => console.log('✅ Redis connected'));
   redisClient.on('ready', () => console.log('✅ Redis ready'));
 

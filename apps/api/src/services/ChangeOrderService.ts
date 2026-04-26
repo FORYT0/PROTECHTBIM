@@ -86,7 +86,6 @@ export class ChangeOrderService {
 
   async getAllChangeOrders(): Promise<ChangeOrder[]> {
     return await this.changeOrderRepository.find({
-      relations: ['project', 'contract', 'submitter'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -455,7 +454,6 @@ export class ChangeOrderService {
   async getChangeOrdersByProject(projectId: string): Promise<ChangeOrder[]> {
     return await this.changeOrderRepository.find({
       where: { projectId },
-      relations: ['contract', 'submitter'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -463,7 +461,6 @@ export class ChangeOrderService {
   async getChangeOrdersByContract(contractId: string): Promise<ChangeOrder[]> {
     return await this.changeOrderRepository.find({
       where: { contractId },
-      relations: ['submitter'],
       order: { createdAt: 'DESC' },
     });
   }

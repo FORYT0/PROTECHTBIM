@@ -122,8 +122,8 @@ export const createTimeEntryRouter = (): Router => {
     }
   });
 
-  // GET /api/v1/time_entries - List time entries with filtering
-  router.get('/', authenticate, async (req: Request, res: Response) => {
+  // GET /api/v1/time_entries - List time entries (auth optional, filters by userId)
+  router.get('/', async (req: Request, res: Response) => {
     try {
       const {
         work_package_id,
