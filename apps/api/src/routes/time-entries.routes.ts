@@ -148,25 +148,20 @@ export const createTimeEntryRouter = (): Router => {
       };
 
       if (date_from) {
-        const dateFrom = new Date(date_from as string);
-        if (isNaN(dateFrom.getTime())) {
-          return res.status(400).json({
-            error: 'Bad Request',
-            message: 'Invalid date_from format',
-          });
+        // Accept YYYY-MM-DD or ISO format
+        const dateFromStr = (date_from as string).split('T')[0];
+        const dateFrom = new Date(dateFromStr + 'T00:00:00.000Z');
+        if (!isNaN(dateFrom.getTime())) {
+          filters.dateFrom = dateFrom;
         }
-        filters.dateFrom = dateFrom;
       }
 
       if (date_to) {
-        const dateTo = new Date(date_to as string);
-        if (isNaN(dateTo.getTime())) {
-          return res.status(400).json({
-            error: 'Bad Request',
-            message: 'Invalid date_to format',
-          });
+        const dateToStr = (date_to as string).split('T')[0];
+        const dateTo = new Date(dateToStr + 'T23:59:59.999Z');
+        if (!isNaN(dateTo.getTime())) {
+          filters.dateTo = dateTo;
         }
-        filters.dateTo = dateTo;
       }
 
       const result = await repository.findAll(filters);

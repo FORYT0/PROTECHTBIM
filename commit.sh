@@ -2,27 +2,29 @@
 LOG="C:/Users/User/AndroidStudioProjects/PROTECHT BIM/git_output.txt"
 cd "C:/Users/User/AndroidStudioProjects/PROTECHT BIM"
 
-echo "=== FIXING CONTRACT SERVICE ===" > "$LOG"
-C:/Python314/python.exe fix_contracts_service.py >> "$LOG" 2>&1
+echo "=== FIXING TIME ENTRIES ===" > "$LOG"
+C:/Python314/python.exe fix_time_entries.py >> "$LOG" 2>&1
 
 echo "" >> "$LOG"
 echo "=== REBUILDING BUNDLE ===" >> "$LOG"
-node apps/api/scripts/build-bundle.js >> "$LOG" 2>&1
+node apps/api/scripts/build-bundle.js 2>&1 | tail -4 >> "$LOG"
 
 echo "" >> "$LOG"
-echo "=== COMMITTING ===" >> "$LOG"
+echo "=== COMMITTING ALL ===" >> "$LOG"
 git add -A >> "$LOG" 2>&1
-git commit -m "fix: ContractService.getContractsByProjectId was hardcoded to return []
+git commit -m "fix: Time entries date format + TimeEntryService rewrite
 
-Critical bug: getContractsByProjectId had a debug stub that always returned
-an empty array regardless of the project. This caused the Contracts page
-to always show 0 contracts even with valid data in the DB.
+Backend (time-entries.routes.ts):
+  - date_from/date_to parsing now accepts YYYY-MM-DD without rejecting
+    with 400. Splits on T so ISO dates also work. No longer throws on
+    partial dates.
 
-Also removed heavy TypeORM relations from ContractService list methods
-(getAllContracts, getContractById, getContractByProjectId) which were
-causing the same 15min timeout as the Snag/DailyReport services.
-
-All 4 services now fixed: Snag, DailyReport, ChangeOrder, Contract." >> "$LOG" 2>&1
+Frontend (TimeEntryService.ts):
+  - Complete rewrite using apiRequest() instead of axios
+  - Fixes auth: was reading localStorage 'auth_token' (singular) but
+    we store as 'auth_tokens' (plural). apiRequest() handles auth correctly.
+  - toDateStr() helper ensures all dates sent as YYYY-MM-DD
+  - All methods now use consistent error handling" >> "$LOG" 2>&1
 
 echo "" >> "$LOG"
 echo "=== PUSHING ===" >> "$LOG"

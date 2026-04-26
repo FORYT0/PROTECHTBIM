@@ -1,19 +1,11 @@
-=== FIXING CONTRACT SERVICE ===
-getContractsByProjectId: fixed (bytes match)
-ContractService saved
+=== FIXING TIME ENTRIES ===
+date parsing fixed OK
+time-entries route saved
 
 === REBUILDING BUNDLE ===
-🔨 Building PROTECHT BIM API bundle...
-   Entry:  C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\src\main.ts
-   Output: C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js
-   Libs:   C:\Users\User\AndroidStudioProjects\PROTECHT BIM\libs
-
-  apps\api\dist-bundle\main.js  643.6kb
-
-Done in 136ms
 
 ✅ Bundle complete → C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js (644 KB)
 🚀 Start: node apps\api\dist-bundle\main.js
 
 
-=== COMMITTING ===
+=== COMMITTING ALL ===
