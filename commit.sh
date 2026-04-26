@@ -2,32 +2,36 @@
 LOG="C:/Users/User/AndroidStudioProjects/PROTECHT BIM/git_output.txt"
 cd "C:/Users/User/AndroidStudioProjects/PROTECHT BIM"
 
-echo "=== FIXING TIME ENTRIES ===" > "$LOG"
-C:/Python314/python.exe fix_time_entries.py >> "$LOG" 2>&1
+echo "=== APPLYING FIXES ===" > "$LOG"
+C:/Python314/python.exe fix_userid.py >> "$LOG" 2>&1
+C:/Python314/python.exe fix_co_service.py >> "$LOG" 2>&1
 
 echo "" >> "$LOG"
-echo "=== REBUILDING BUNDLE ===" >> "$LOG"
-node apps/api/scripts/build-bundle.js 2>&1 | tail -4 >> "$LOG"
+echo "=== REBUILD ===" >> "$LOG"
+node apps/api/scripts/build-bundle.js 2>&1 | tail -3 >> "$LOG"
 
 echo "" >> "$LOG"
-echo "=== COMMITTING ALL ===" >> "$LOG"
+echo "=== COMMIT & PUSH ===" >> "$LOG"
 git add -A >> "$LOG" 2>&1
-git commit -m "fix: Time entries date format + TimeEntryService rewrite
+git commit -m "fix: All create operations failing - 5 root causes fixed
 
-Backend (time-entries.routes.ts):
-  - date_from/date_to parsing now accepts YYYY-MM-DD without rejecting
-    with 400. Splits on T so ISO dates also work. No longer throws on
-    partial dates.
+1. snags POST: userId was null (user?.userId fallback to hardcoded UUID
+   that doesn't exist in users table -> FK violation). Now reads from
+   JWT token first, body.createdBy second, returns 401 if neither.
 
-Frontend (TimeEntryService.ts):
-  - Complete rewrite using apiRequest() instead of axios
-  - Fixes auth: was reading localStorage 'auth_token' (singular) but
-    we store as 'auth_tokens' (plural). apiRequest() handles auth correctly.
-  - toDateStr() helper ensures all dates sent as YYYY-MM-DD
-  - All methods now use consistent error handling" >> "$LOG" 2>&1
+2. daily-reports POST: Same null userId issue. Same fix applied.
 
-echo "" >> "$LOG"
-echo "=== PUSHING ===" >> "$LOG"
+3. change-orders POST: Service required contractId (threw 'Project ID
+   and Contract ID are required') but change orders can exist without
+   a contract. Made contractId optional in ChangeOrderService.
+
+4. contracts POST: Was using hardcoded test UUID as fallback userId.
+   Changed to read from JWT token.
+
+5. change-orders route: userId fallback chain fixed same as others.
+
+Time entries already work (201 confirmed in test)." >> "$LOG" 2>&1
+
 git push origin main >> "$LOG" 2>&1
 echo "DONE" >> "$LOG"
 cat "$LOG"

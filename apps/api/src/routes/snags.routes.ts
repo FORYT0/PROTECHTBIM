@@ -21,7 +21,11 @@ router.get('/', async (req: Request, res: Response) => {
 // Create snag
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId || req.body.createdBy;
+    // Get userId from JWT token (preferred) or request body
+    const userId = (req as any).user?.userId || req.body.createdBy || req.body.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required to create snag' });
+    }
     const snag = await snagService.createSnag(
       {
         projectId: req.body.projectId,

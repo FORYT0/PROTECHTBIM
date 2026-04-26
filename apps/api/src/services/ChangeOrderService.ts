@@ -121,7 +121,7 @@ export class ChangeOrderService {
     // Create change order
     const changeOrder = this.changeOrderRepository.create({
       projectId: data.projectId,
-      contractId: data.contractId,
+      contractId: data.contractId || null,
       changeNumber,
       title: data.title,
       description: data.description,

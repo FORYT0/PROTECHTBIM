@@ -19,7 +19,10 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId || req.body.createdBy;
+    const userId = (req as any).user?.userId || req.body.createdBy || req.body.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required to create daily report' });
+    }
     const dailyReport = await dailyReportService.createDailyReport(
       {
         projectId: req.body.projectId,

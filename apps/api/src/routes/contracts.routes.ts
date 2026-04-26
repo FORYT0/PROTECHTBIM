@@ -23,7 +23,10 @@ router.get('/', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
   try {
     // Use a default user ID for testing if not authenticated
-    const userId = (req as any).user?.userId || 'a0077b22-fc68-408c-b1ce-aab3d36855de'; // Default test user
+    const userId = (req as any).user?.userId || req.body.createdBy;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
 
     console.log('📝 Creating contract:', req.body);
 

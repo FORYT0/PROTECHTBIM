@@ -19,7 +19,10 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.userId || req.body.submittedBy;
+    const userId = (req as any).user?.userId || req.body.submittedBy || req.body.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     const changeOrder = await changeOrderService.createChangeOrder(
       {
         projectId: req.body.projectId,

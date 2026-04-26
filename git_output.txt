@@ -1,11 +1,18 @@
-=== FIXING TIME ENTRIES ===
-date parsing fixed OK
-time-entries route saved
+=== APPLYING FIXES ===
+snags: userId fix OK
+daily-reports: userId fix OK
+change-orders: userId fix OK
+contracts: userId fix OK
 
-=== REBUILDING BUNDLE ===
+All userId fixes applied
+ChangeOrderService: NOT FOUND
+'rDTO {\n  projectId: string;\n  contractId: string;\n  title: string;\n  description: string;\n  reason: ChangeOrderReason;\n  costImpact: number;\n  scheduleImpactDays?: number;\n  priori'
+ChangeOrderService: contractId nullable OK
+Done
 
+=== REBUILD ===
 ✅ Bundle complete → C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js (644 KB)
 🚀 Start: node apps\api\dist-bundle\main.js
 
 
-=== COMMITTING ALL ===
+=== COMMIT & PUSH ===
