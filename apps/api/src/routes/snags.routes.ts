@@ -4,6 +4,22 @@ import { authenticateToken } from '../middleware/auth.middleware';
 import { SnagSeverity, SnagCategory, SnagStatus } from '../entities/Snag';
 
 const router = Router();
+
+// Optional auth: extract user from JWT if present, don't block if missing
+const optionalAuth = (req: Request, _res: Response, next: NextFunction) => {
+  const header = req.headers.authorization;
+  if (header && header.startsWith('Bearer ')) {
+    const token = header.slice(7);
+    try {
+      const jwt = require('jsonwebtoken');
+      const secret = process.env.JWT_SECRET || 'fallback_secret_key_change_in_production';
+      const decoded = jwt.verify(token, secret) as any;
+      (req as any).user = decoded;
+    } catch {}
+  }
+  next();
+};
+
 const snagService = new SnagService();
 
 // ─── PUBLIC ROUTES (no auth) ─────────────────────────────────────
@@ -19,7 +35,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Create snag
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', optionalAuth, async (req: Request, res: Response) => {
   try {
     // Get userId from JWT token (preferred) or request body
     const userId = (req as any).user?.userId || req.body.createdBy || req.body.userId;
