@@ -1,0 +1,4 @@
+=== STATUS ===
+ M commit.sh
+?? git_output.txt
+=== COMMIT ===
