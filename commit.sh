@@ -2,25 +2,30 @@
 LOG="C:/Users/User/AndroidStudioProjects/PROTECHT BIM/git_output.txt"
 cd "C:/Users/User/AndroidStudioProjects/PROTECHT BIM"
 
-echo "=== GIT LOG ===" > "$LOG"
-git log --oneline -5 >> "$LOG" 2>&1
+echo "=== FIXING CONTRACT SERVICE ===" > "$LOG"
+C:/Python314/python.exe fix_contracts_service.py >> "$LOG" 2>&1
+
 echo "" >> "$LOG"
+echo "=== REBUILDING BUNDLE ===" >> "$LOG"
+node apps/api/scripts/build-bundle.js >> "$LOG" 2>&1
 
-echo "=== HEALTH CHECK ===" >> "$LOG"
-C:/Python314/python.exe -c "
-import urllib.request, json, ssl, time
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
+echo "" >> "$LOG"
+echo "=== COMMITTING ===" >> "$LOG"
+git add -A >> "$LOG" 2>&1
+git commit -m "fix: ContractService.getContractsByProjectId was hardcoded to return []
 
-for attempt in range(1, 4):
-    try:
-        r = urllib.request.urlopen('https://protechtbim-production.up.railway.app/health', timeout=10, context=ctx)
-        print(f'Attempt {attempt}: OK -', r.read().decode()[:120])
-        break
-    except Exception as e:
-        print(f'Attempt {attempt}: FAIL -', str(e)[:60])
-        if attempt < 3: time.sleep(5)
-" >> "$LOG" 2>&1
+Critical bug: getContractsByProjectId had a debug stub that always returned
+an empty array regardless of the project. This caused the Contracts page
+to always show 0 contracts even with valid data in the DB.
 
+Also removed heavy TypeORM relations from ContractService list methods
+(getAllContracts, getContractById, getContractByProjectId) which were
+causing the same 15min timeout as the Snag/DailyReport services.
+
+All 4 services now fixed: Snag, DailyReport, ChangeOrder, Contract." >> "$LOG" 2>&1
+
+echo "" >> "$LOG"
+echo "=== PUSHING ===" >> "$LOG"
+git push origin main >> "$LOG" 2>&1
+echo "DONE" >> "$LOG"
 cat "$LOG"

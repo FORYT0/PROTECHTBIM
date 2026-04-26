@@ -1,9 +1,19 @@
-=== GIT LOG ===
-7355b6d Update git_output.txt
-f2c3d8b Update git_output.txt
-362b569 coom git 2
-8840b8c comm output
-d4ea311 3changes
+=== FIXING CONTRACT SERVICE ===
+getContractsByProjectId: fixed (bytes match)
+ContractService saved
 
-=== HEALTH CHECK ===
-Attempt 1: OK - {"status":"ok","db":"connected","timestamp":"2026-04-26T18:01:31.146Z","service":"protecht-bim-api","version":"0.1.0","u
+=== REBUILDING BUNDLE ===
+🔨 Building PROTECHT BIM API bundle...
+   Entry:  C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\src\main.ts
+   Output: C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js
+   Libs:   C:\Users\User\AndroidStudioProjects\PROTECHT BIM\libs
+
+  apps\api\dist-bundle\main.js  643.6kb
+
+Done in 136ms
+
+✅ Bundle complete → C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js (644 KB)
+🚀 Start: node apps\api\dist-bundle\main.js
+
+
+=== COMMITTING ===

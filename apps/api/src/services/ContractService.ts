@@ -124,7 +124,6 @@ export class ContractService {
 
   async getAllContracts(): Promise<Contract[]> {
     return await this.contractRepository.find({
-      relations: ['project', 'creator'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -132,21 +131,21 @@ export class ContractService {
   async getContractById(id: string): Promise<Contract | null> {
     return await this.contractRepository.findOne({
       where: { id },
-      relations: ['project', 'creator'],
-    });
+      });
   }
 
   async getContractByProjectId(projectId: string): Promise<Contract | null> {
     return await this.contractRepository.findOne({
       where: { projectId },
-      relations: ['project', 'creator'],
       order: { createdAt: 'DESC' },
     });
   }
 
   async getContractsByProjectId(projectId: string): Promise<Contract[]> {
-    console.log('🏗️ DEBUG: Returning hardcoded empty array for project:', projectId);
-    return [];
+    return await this.contractRepository.find({
+      where: { projectId },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async updateContract(id: string, data: UpdateContractDTO, userId: string): Promise<Contract> {
