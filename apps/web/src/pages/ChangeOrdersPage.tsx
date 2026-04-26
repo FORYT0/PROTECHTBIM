@@ -116,12 +116,15 @@ function ChangeOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#000000] space-y-6 pb-8">
+    <div className="space-y-5 pb-8 min-w-0">
       {/* CHANGE ORDERS COMMAND HEADER */}
       <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-white mb-3">Change Order Management</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-3">
+              <h1 className="text-2xl font-bold text-white">Change Order Management</h1>
+              <ProjectPicker projectId={projectId} projects={projects} onSelect={setProjectId} isLoading={projectsLoading} />
+            </div>
             <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-gray-500">Total Change Orders:</span>

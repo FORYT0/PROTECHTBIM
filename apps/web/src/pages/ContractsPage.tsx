@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useProjectContext } from '../hooks/useProjectContext';
+import { ProjectPicker } from '../components/ProjectPicker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { contractService } from '../services/contractService';
 import ContractFormModal from '../components/ContractFormModal';

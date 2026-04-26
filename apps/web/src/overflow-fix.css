@@ -1,0 +1,10 @@
+/* GLOBAL OVERFLOW FIX — prevents horizontal scroll on all pages */
+html, body, #root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Ensure all direct children of main content can't break layout */
+.main-content > * {
+  min-width: 0;
+}
