@@ -1,11 +1,3 @@
-=== STATUS ===
- M commit.sh
-?? git_output.txt
-=== COMMIT ===
-[main 0fd62f7] fix: responsiveness overflow and project-scoped pages auto-load
- 2 files changed, 14 insertions(+), 16 deletions(-)
- create mode 100644 git_output.txt
-=== PUSH ===
-To https://github.com/FORYT0/PROTECHTBIM.git
-   032df98..0fd62f7  main -> main
-DONE
+=== STATUS BEFORE ===
+ M git_output.txt
+=== ADD ALL ===
