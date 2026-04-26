@@ -1,18 +1,12 @@
-=== APPLYING FIXES ===
-snags: userId fix OK
-daily-reports: userId fix OK
-change-orders: userId fix OK
-contracts: userId fix OK
-
-All userId fixes applied
-ChangeOrderService: NOT FOUND
-'rDTO {\n  projectId: string;\n  contractId: string;\n  title: string;\n  description: string;\n  reason: ChangeOrderReason;\n  costImpact: number;\n  scheduleImpactDays?: number;\n  priori'
-ChangeOrderService: contractId nullable OK
-Done
-
-=== REBUILD ===
-✅ Bundle complete → C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js (644 KB)
-🚀 Start: node apps\api\dist-bundle\main.js
-
-
-=== COMMIT & PUSH ===
+=== CREATE TESTS ===
+wp_id: 5012dc38-b256-41a8-997f-263aa3f2bdb9
+FAIL CREATE SNAG: HTTP 400
+  Error: {"error": "null value in column \"createdBy\" of relation \"snags\" violates not-null constraint"}
+FAIL CREATE DAILY REPORT: HTTP 400
+  Error: {"error": "null value in column \"createdBy\" of relation \"daily_reports\" violates not-null constraint"}
+FAIL CREATE CHANGE ORDER: HTTP 400
+  Error: {"error": "Project ID and Contract ID are required"}
+OK CREATE TIME ENTRY: HTTP 201
+  Created ID: f3d8e4ea...
+FAIL CREATE CONTRACT: HTTP 400
+  Error: {"error": "insert or update on table \"contracts\" violates foreign key constraint \"FK_754103da22018eef9a0ee6f21e5\""}
