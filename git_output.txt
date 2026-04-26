@@ -1,3 +1,29 @@
-=== STATUS BEFORE ===
- M git_output.txt
-=== ADD ALL ===
+=== FIRST LINE OF Layout.tsx IN REPO ===
+import { useState } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
+
+=== FIRST LINE OF Layout.tsx ON DISK ===
+import { useState } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
+
+=== FIRST LINE OF SnagsPage.tsx IN REPO ===
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { snagService } from '../services/snagService';
+import { queryKeys } from '../lib/queryClient';
+
+=== FIRST LINE OF SnagsPage.tsx ON DISK ===
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { snagService } from '../services/snagService';
+import { queryKeys } from '../lib/queryClient';
+
+=== DIFF Layout.tsx ===

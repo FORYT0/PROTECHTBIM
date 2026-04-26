@@ -1,25 +1,18 @@
 #!/bin/bash
 LOG="C:/Users/User/AndroidStudioProjects/PROTECHT BIM/git_output.txt"
 cd "C:/Users/User/AndroidStudioProjects/PROTECHT BIM"
-echo "=== STATUS BEFORE ===" > "$LOG"
-git status --short >> "$LOG" 2>&1
-echo "=== ADD ALL ===" >> "$LOG"
-git add -A >> "$LOG" 2>&1
-echo "=== STATUS AFTER ADD ===" >> "$LOG"
-git status --short >> "$LOG" 2>&1
-echo "=== COMMIT ===" >> "$LOG"
-git commit -m "fix: responsiveness + project-scoped pages + overflow fixes
-
-- html/body overflow-x:hidden prevents horizontal scroll
-- InteractiveCard: min-w-0, truncate, no fixed min-width
-- Layout: compact nav bar, overflow-safe, mobile-first
-- useProjectContext hook: auto-picks first project if no project_id in URL
-- ProjectPicker: dropdown component for in-page project switching
-- SnagsPage: rewired with useProjectContext, responsive grid
-- DailyReportsPage: rewired with useProjectContext, responsive grid
-- ChangeOrdersPage: ProjectPicker added
-- ContractsPage: ProjectPicker added" >> "$LOG" 2>&1
-echo "=== PUSH ===" >> "$LOG"
-git push origin main >> "$LOG" 2>&1
-echo "DONE" >> "$LOG"
+echo "=== FIRST LINE OF Layout.tsx IN REPO ===" > "$LOG"
+git show HEAD:apps/web/src/components/Layout.tsx | head -5 >> "$LOG" 2>&1
+echo "" >> "$LOG"
+echo "=== FIRST LINE OF Layout.tsx ON DISK ===" >> "$LOG"
+head -5 apps/web/src/components/Layout.tsx >> "$LOG" 2>&1
+echo "" >> "$LOG"
+echo "=== FIRST LINE OF SnagsPage.tsx IN REPO ===" >> "$LOG"
+git show HEAD:apps/web/src/pages/SnagsPage.tsx | head -5 >> "$LOG" 2>&1
+echo "" >> "$LOG"
+echo "=== FIRST LINE OF SnagsPage.tsx ON DISK ===" >> "$LOG"
+head -5 apps/web/src/pages/SnagsPage.tsx >> "$LOG" 2>&1
+echo "" >> "$LOG"
+echo "=== DIFF Layout.tsx ===" >> "$LOG"
+git diff HEAD -- apps/web/src/components/Layout.tsx | head -20 >> "$LOG" 2>&1
 cat "$LOG"
