@@ -8,3 +8,5 @@ restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
 healthcheckPath = "/health"
 healthcheckTimeout = 300
+
+# Deploy trigger: Sun Apr 26 21:49:10 EAST 2026
