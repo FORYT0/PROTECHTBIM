@@ -1,24 +1,26 @@
 #!/bin/bash
 LOG="C:/Users/User/AndroidStudioProjects/PROTECHT BIM/git_output.txt"
 cd "C:/Users/User/AndroidStudioProjects/PROTECHT BIM"
+echo "=== CHECKING TIME ENTRIES ===" > "$LOG"
+C:/Python314/python.exe -c "
+import urllib.request, json, ssl
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
+base = 'https://protechtbim-production.up.railway.app'
 
-echo "=== REBUILD SEED ===" > "$LOG"
-node apps/api/scripts/build-seed.js 2>&1 | tail -2 >> "$LOG"
+req = urllib.request.Request(f'{base}/api/v1/auth/login',
+    data=json.dumps({'email':'admin@protecht.demo','password':'Demo1234!'}).encode(),
+    headers={'Content-Type':'application/json'}, method='POST')
+token = json.loads(urllib.request.urlopen(req, timeout=10, context=ctx).read())['tokens']['accessToken']
 
-echo "" >> "$LOG"
-echo "=== RUN SEED ===" >> "$LOG"
-export DATABASE_URL="postgresql://postgres:XjpUJrMWmSCihvHHJTXvxSaxpBdGCNfm@shortline.proxy.rlwy.net:35055/railway"
-export NODE_ENV="production"
-timeout 60 node apps/api/dist-bundle/seed.js >> "$LOG" 2>&1
-
-echo "" >> "$LOG"
-echo "=== COMMIT + PUSH ===" >> "$LOG"
-git add -A >> "$LOG" 2>&1
-git commit -m "seed: Add 120+ time entries for TimeTracking page demo data
-
-Adds 30 working days x 3 users x 2 work packages = ~120 time entries
-so TimeTrackingPage shows real logged hours instead of empty state.
-Also adds TimeEntry import to seed-demo.ts." >> "$LOG" 2>&1
-git push origin main >> "$LOG" 2>&1
-echo "DONE" >> "$LOG"
+req2 = urllib.request.Request(f'{base}/api/v1/time_entries?per_page=5&date_from=2025-01-01&date_to=2025-12-31')
+req2.add_header('Authorization', f'Bearer {token}')
+r = urllib.request.urlopen(req2, timeout=10, context=ctx)
+data = json.loads(r.read())
+print('TIME ENTRIES total:', data.get('total', 0))
+if data.get('time_entries'):
+    te = data['time_entries'][0]
+    print('First:', te.get('hours'), 'h on', str(te.get('date',''))[:10])
+" >> "$LOG" 2>&1
 cat "$LOG"
