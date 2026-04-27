@@ -37,12 +37,13 @@ router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void
   try {
     const userId = (req as any).user?.userId || req.body.submittedBy || req.body.userId;
     if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
+      res.status(401).json({ error: 'Authentication required' });
+      return;
     }
     const changeOrder = await changeOrderService.createChangeOrder(
       {
         projectId: req.body.projectId,
-        contractId: req.body.contractId,
+        contractId: req.body.contractId || undefined,
         title: req.body.title,
         description: req.body.description,
         reason: req.body.reason as ChangeOrderReason,

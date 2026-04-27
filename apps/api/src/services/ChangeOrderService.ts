@@ -24,7 +24,7 @@ import { enhancedEventBus, SystemEventType, createSystemEvent } from './Enhanced
 
 export interface CreateChangeOrderDTO {
   projectId: string;
-  contractId: string;
+  contractId?: string;
   title: string;
   description: string;
   reason: ChangeOrderReason;
@@ -92,8 +92,8 @@ export class ChangeOrderService {
 
   async createChangeOrder(data: CreateChangeOrderDTO, userId: string): Promise<ChangeOrder> {
     // Validation
-    if (!data.projectId || !data.contractId) {
-      throw new Error('Project ID and Contract ID are required');
+    if (!data.projectId) {
+      throw new Error('Project ID is required');
     }
 
     if (!data.title || !data.description) {
@@ -103,13 +103,14 @@ export class ChangeOrderService {
     // costLines is optional
     const costLines = data.costLines || [];
 
-    // Verify contract exists
-    const contract = await this.contractRepository.findOne({
-      where: { id: data.contractId },
-    });
-
-    if (!contract) {
-      throw new Error('Contract not found');
+    // Verify contract exists only if contractId is provided
+    if (data.contractId) {
+      const contract = await this.contractRepository.findOne({
+        where: { id: data.contractId },
+      });
+      if (!contract) {
+        throw new Error('Contract not found');
+      }
     }
 
     // Generate change number
