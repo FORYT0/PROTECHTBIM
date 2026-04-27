@@ -39,7 +39,7 @@ export const CostTrackingPage: React.FC = () => {
         project_id: selectedProject || undefined,
         date_from: dateRange.from,
         date_to: dateRange.to,
-        per_page: 1000,
+        per_page: 500,
       });
       setCostEntries(result.cost_entries);
 
@@ -84,9 +84,17 @@ export const CostTrackingPage: React.FC = () => {
         });
       }
     } catch (err) {
+      // Don't block the page — show it with empty data and a warning
       setError(err instanceof Error ? err.message : 'Failed to load cost data');
       setCostEntries([]);
-      setCostSummary(null);
+      setCostSummary({
+        total_cost: 0,
+        billable_cost: 0,
+        non_billable_cost: 0,
+        committed_cost: 0,
+        by_cost_category: [],
+        by_payment_status: [],
+      });
     } finally {
       setIsLoading(false);
     }
@@ -178,34 +186,21 @@ export const CostTrackingPage: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#000000] space-y-6 pb-8">
-        <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
-          <h1 className="text-3xl font-bold text-white">Financial Control Center</h1>
-        </div>
-
-        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-6">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-semibold text-red-400 mb-2">Unable to Load Cost Data</h3>
-              <p className="text-sm text-gray-400 mb-4">{error}</p>
-              <button 
-                onClick={loadCostData} 
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                Try Again
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#000000] space-y-6 pb-8">
+      {/* Inline error banner — page still renders with zero data */}
+      {error && (
+        <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-orange-400 shrink-0" />
+            <p className="text-sm text-orange-300">{error}</p>
+          </div>
+          <button onClick={loadCostData}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-medium transition-colors shrink-0">
+            <RefreshCw className="w-3.5 h-3.5" />Retry
+          </button>
+        </div>
+      )}
       {/* COST COMMAND HEADER */}
       <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
         <div className="flex items-start justify-between">

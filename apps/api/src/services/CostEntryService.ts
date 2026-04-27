@@ -208,8 +208,8 @@ export class CostEntryService {
       throw new Error('Page must be greater than 0');
     }
 
-    if (filters.perPage && (filters.perPage < 1 || filters.perPage > 100)) {
-      throw new Error('Per page must be between 1 and 100');
+    if (filters.perPage && (filters.perPage < 1 || filters.perPage > 1000)) {
+      throw new Error('Per page must be between 1 and 1000');
     }
 
     return await this.costEntryRepository.findAll(filters);
