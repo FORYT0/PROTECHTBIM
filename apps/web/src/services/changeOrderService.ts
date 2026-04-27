@@ -1,95 +1,59 @@
 import apiRequest from '../utils/api';
 
 export interface ChangeOrder {
-  id: string;
-  projectId: string;
-  contractId: string;
-  changeNumber: string;
-  title: string;
-  description: string;
-  reason: string;
-  costImpact: number;
-  scheduleImpactDays: number;
-  status: string;
-  priority: string;
-  submittedBy: string;
-  submittedAt?: string;
-  reviewedBy?: string;
-  reviewedAt?: string;
-  approvedBy?: string;
-  approvedAt?: string;
-  rejectionReason?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface ChangeOrderMetrics {
-  total: number;
-  draft: number;
-  submitted: number;
-  underReview: number;
-  approved: number;
-  rejected: number;
-  voided: number;
-  totalCostImpact: number;
-  approvedCostImpact: number;
-  pendingCostImpact: number;
-  totalScheduleImpact: number;
-  approvedScheduleImpact: number;
+  id: string; projectId: string; contractId?: string | null; changeNumber: string;
+  title: string; description: string; reason: string; costImpact: number;
+  scheduleImpactDays: number; status: string; priority: string;
+  submittedBy: string; submittedAt?: string; reviewedBy?: string; reviewedAt?: string;
+  approvedBy?: string; approvedAt?: string; rejectionReason?: string; notes?: string;
+  createdAt: string; updatedAt: string;
 }
 
 export const changeOrderService = {
   async getAllChangeOrders(): Promise<ChangeOrder[]> {
-    try {
-      console.log('changeOrderService.getAllChangeOrders called');
-      const response = await apiRequest('/change-orders');
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API error response:', errorData);
-        throw new Error(errorData.error || 'Failed to fetch change orders');
-      }
-      
-      const data = await response.json();
-      console.log('getAllChangeOrders response:', data);
-      return data.changeOrders || [];
-    } catch (error) {
-      console.error('Error fetching change orders:', error);
-      throw error;
-    }
+    const r = await apiRequest('/change-orders');
+    if (!r.ok) throw new Error('Failed to fetch change orders');
+    return (await r.json()).changeOrders || [];
   },
 
   async getChangeOrdersByProject(projectId: string): Promise<ChangeOrder[]> {
-    const response = await apiRequest(`/change-orders/project/${projectId}`);
-    if (!response.ok) throw new Error('Failed to fetch change orders');
-    const data = await response.json();
-    return data.changeOrders;
+    const r = await apiRequest(`/change-orders/project/${projectId}`);
+    if (!r.ok) throw new Error('Failed to fetch change orders');
+    return (await r.json()).changeOrders || [];
   },
 
-  async getChangeOrderMetrics(projectId: string): Promise<ChangeOrderMetrics> {
-    const response = await apiRequest(`/change-orders/project/${projectId}/metrics`);
-    if (!response.ok) throw new Error('Failed to fetch change order metrics');
-    const data = await response.json();
-    return data.metrics;
+  async getChangeOrderMetrics(projectId: string): Promise<any> {
+    const r = await apiRequest(`/change-orders/project/${projectId}/metrics`);
+    if (!r.ok) throw new Error('Failed to fetch metrics');
+    return (await r.json()).metrics;
   },
 
-  async createChangeOrder(changeOrderData: any): Promise<ChangeOrder> {
-    const response = await apiRequest('/change-orders', {
-      method: 'POST',
-      body: JSON.stringify(changeOrderData),
-    });
-    if (!response.ok) throw new Error('Failed to create change order');
-    const data = await response.json();
-    return data.changeOrder;
+  async createChangeOrder(data: any): Promise<ChangeOrder> {
+    const r = await apiRequest('/change-orders', { method: 'POST', body: JSON.stringify(data) });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to create change order');
+    }
+    return (await r.json()).changeOrder;
+  },
+
+  async submitChangeOrder(id: string): Promise<ChangeOrder> {
+    const r = await apiRequest(`/change-orders/${id}/submit`, { method: 'POST', body: '{}' });
+    if (!r.ok) throw new Error('Failed to submit change order');
+    return (await r.json()).changeOrder;
   },
 
   async approveChangeOrder(id: string): Promise<ChangeOrder> {
-    const response = await apiRequest(`/change-orders/${id}/approve`, {
-      method: 'POST',
+    const r = await apiRequest(`/change-orders/${id}/approve`, { method: 'POST', body: '{}' });
+    if (!r.ok) throw new Error('Failed to approve change order');
+    return (await r.json()).changeOrder;
+  },
+
+  async rejectChangeOrder(id: string, reason: string): Promise<ChangeOrder> {
+    const r = await apiRequest(`/change-orders/${id}/reject`, {
+      method: 'POST', body: JSON.stringify({ reason }),
     });
-    if (!response.ok) throw new Error('Failed to approve change order');
-    const data = await response.json();
-    return data.changeOrder;
+    if (!r.ok) throw new Error('Failed to reject change order');
+    return (await r.json()).changeOrder;
   },
 };

@@ -1,29 +1,46 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { snagService } from '../services/snagService';
+import { snagService, Snag } from '../services/snagService';
 import { queryKeys } from '../lib/queryClient';
 import { useProjectContext } from '../hooks/useProjectContext';
 import { ProjectPicker } from '../components/ProjectPicker';
 import SnagFormModal from '../components/SnagFormModal';
 import { InteractiveCard } from '../components/InteractiveCard';
-import { toast } from '../utils/toast';
 import {
-  AlertCircle, Plus, MapPin, DollarSign, User, CheckCircle,
-  Target, Activity, Search, XCircle, Clock
+  AlertCircle, Plus, MapPin, DollarSign, CheckCircle,
+  Target, Search, XCircle, Clock, Edit2, ChevronDown
 } from 'lucide-react';
 
-import { useCurrency } from '../contexts/CurrencyContext';
+const SEV_COLOR: Record<string, string> = {
+  Critical: 'bg-red-500/20 text-red-400 border-red-500/30',
+  Major:    'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  Minor:    'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+};
+const STATUS_COLOR: Record<string, string> = {
+  Verified:    'bg-green-500/20 text-green-400 border-green-500/30',
+  Resolved:    'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  'In Progress': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+  Open:        'bg-red-500/20 text-red-400 border-red-500/30',
+};
+
+// Next valid status transitions
+const TRANSITIONS: Record<string, { label: string; action: string }[]> = {
+  Open:        [{ label: 'Start Work', action: 'in-progress' }],
+  'In Progress': [{ label: 'Mark Resolved', action: 'resolve' }],
+  Resolved:    [{ label: 'Verify & Close', action: 'verify' }],
+  Verified:    [],
+};
 
 function SnagsPage() {
-  const navigate = useNavigate();
   const { projectId, projects, isLoading: projectsLoading, setProjectId } = useProjectContext();
   const queryClient = useQueryClient();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingSnag, setEditingSnag] = useState<Snag | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterSeverity, setFilterSeverity] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterSeverity, setFilterSeverity] = useState('all');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const { data: snags = [], isLoading, error: queryError } = useQuery({
     queryKey: queryKeys.projectSnags(projectId),
@@ -31,7 +48,7 @@ function SnagsPage() {
     enabled: !!projectId,
   });
 
-  const error = queryError instanceof Error ? queryError.message : null;
+  const refresh = () => queryClient.invalidateQueries({ queryKey: queryKeys.projectSnags(projectId) });
 
   const metrics = {
     total: snags.length,
@@ -40,38 +57,36 @@ function SnagsPage() {
     resolved: snags.filter(s => s.status === 'Resolved').length,
     verified: snags.filter(s => s.status === 'Verified').length,
     critical: snags.filter(s => s.severity === 'Critical').length,
-    major: snags.filter(s => s.severity === 'Major').length,
-    minor: snags.filter(s => s.severity === 'Minor').length,
     totalCostImpact: snags.reduce((sum, s) => sum + (s.costImpact || 0), 0),
-    avgResolutionTime: 0,
   };
 
-  const handleCreateSnag = async (data: any) => {
+  const handleCreate = async (data: any) => {
+    await snagService.createSnag(data);
+    refresh();
+  };
+
+  const handleEdit = async (data: any) => {
+    if (!editingSnag) return;
+    await snagService.updateSnag(editingSnag.id, data);
+    refresh();
+  };
+
+  const handleAction = async (snag: Snag, action: string) => {
+    setActionLoading(snag.id + action);
     try {
-      await snagService.createSnag(data);
-      toast.success('Snag created successfully');
-      queryClient.invalidateQueries({ queryKey: queryKeys.projectSnags(projectId) });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create snag');
-      throw err;
+      if (action === 'in-progress') await snagService.updateSnag(snag.id, { status: 'In Progress' });
+      else if (action === 'resolve')   await snagService.resolveSnag(snag.id);
+      else if (action === 'verify')    await snagService.verifySnag(snag.id);
+      refresh();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const { formatCurrency: fmtCur } = useCurrency();
-  const fmt = (n: number) => fmtCur(n, 'KES');
-
-  const sevColor = (s: string) => ({
-    Critical: 'bg-red-500/20 text-red-400 border-red-500/30',
-    Major: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    Minor: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  }[s] ?? 'bg-gray-500/20 text-gray-400 border-gray-500/30');
-
-  const stColor = (s: string) => ({
-    Verified: 'bg-green-500/20 text-green-400 border-green-500/30',
-    Resolved: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    'In Progress': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-    Open: 'bg-red-500/20 text-red-400 border-red-500/30',
-  }[s] ?? 'bg-gray-500/20 text-gray-400 border-gray-500/30');
+  const fmt = (n: number) => new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(n);
+  const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
   const filtered = snags.filter(s => {
     const q = searchQuery.toLowerCase();
@@ -84,82 +99,26 @@ function SnagsPage() {
 
   return (
     <div className="space-y-5 pb-8 min-w-0">
-      {/* SNAG INTELLIGENCE HEADER */}
-      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
-        <div className="flex items-start justify-between">
-          {/* LEFT SIDE */}
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-white mb-3">Snag & Defect Control Center</h1>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Total Snags:</span>
-                <span className="text-white font-semibold">{metrics.total}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Open:</span>
-                <span className="text-red-400 font-semibold">{metrics.open}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Critical:</span>
-                <span className="text-red-400 font-semibold">{metrics.critical}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Cost Impact:</span>
-                <span className="text-yellow-400 font-semibold">{fmt(metrics.totalCostImpact)}</span>
-              </div>
-            </div>
-            <ProjectPicker projectId={projectId} projects={projects} onSelect={setProjectId} isLoading={projectsLoading} />
+      {/* Header */}
+      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Snag & Defect Management</h1>
+            <p className="text-sm text-gray-400 mt-1">Track, assign, and resolve site defects and punch list items</p>
           </div>
-
-          {/* RIGHT SIDE - EXECUTIVE METRICS */}
-          <div className="grid grid-cols-2 gap-4 ml-6">
-            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="w-5 h-5 text-orange-400" />
-                <span className="text-xs text-gray-400">Total Snags</span>
-              </div>
-              <p className="text-2xl font-bold text-white">{metrics.total}</p>
-              <span className="text-xs text-gray-400">All items</span>
-            </div>
-            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
-              <div className="flex items-center gap-2 mb-2">
-                <XCircle className="w-5 h-5 text-red-400" />
-                <span className="text-xs text-gray-400">Critical</span>
-              </div>
-              <p className="text-2xl font-bold text-red-400">{metrics.critical}</p>
-              <span className="text-xs text-red-400">{metrics.critical > 0 ? 'Urgent action' : 'None critical'}</span>
-            </div>
-            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="w-5 h-5 text-purple-400" />
-                <span className="text-xs text-gray-400">Resolved</span>
-              </div>
-              <p className="text-2xl font-bold text-purple-400">{metrics.resolved}</p>
-              <div className="w-full bg-gray-800 rounded-full h-1.5 mt-2">
-                <div className="bg-purple-400 h-1.5 rounded-full transition-all"
-                  style={{ width: `${metrics.total > 0 ? (metrics.resolved / metrics.total) * 100 : 0}%` }} />
-              </div>
-            </div>
-            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
-              <div className="flex items-center gap-2 mb-2">
-                <DollarSign className="w-5 h-5 text-yellow-400" />
-                <span className="text-xs text-gray-400">Cost Impact</span>
-              </div>
-              <p className="text-2xl font-bold text-yellow-400">{fmt(metrics.totalCostImpact)}</p>
-              <span className="text-xs text-gray-400">Estimated</span>
-            </div>
-          </div>
+          <ProjectPicker projectId={projectId} projects={projects} onSelect={setProjectId} isLoading={projectsLoading} />
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <InteractiveCard icon={AlertCircle} iconColor="text-orange-400" title="Total" value={metrics.total} />
-        <InteractiveCard icon={XCircle} iconColor="text-red-400" title="Critical" value={metrics.critical} badge={{ text: "Urgent", color: "text-red-400" }} />
-        <InteractiveCard icon={AlertCircle} iconColor="text-orange-400" title="Major" value={metrics.major} />
-        <InteractiveCard icon={AlertCircle} iconColor="text-yellow-400" title="Minor" value={metrics.minor} />
-        <InteractiveCard icon={DollarSign} iconColor="text-yellow-400" title="Cost Impact" value={fmt(metrics.totalCostImpact)} />
-        <InteractiveCard icon={Target} iconColor="text-purple-400" title="Resolved" value={`${metrics.total > 0 ? Math.round((metrics.resolved / metrics.total) * 100) : 0}%`} progress={{ value: metrics.total > 0 ? (metrics.resolved / metrics.total) * 100 : 0, color: "bg-purple-400" }} />
+      {/* KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+        <InteractiveCard icon={AlertCircle} iconColor="text-orange-400"  title="Total"       value={metrics.total} />
+        <InteractiveCard icon={XCircle}     iconColor="text-red-400"     title="Open"        value={metrics.open} badge={{ text: 'Action', color: 'text-red-400' }} />
+        <InteractiveCard icon={Clock}       iconColor="text-yellow-400"  title="In Progress" value={metrics.inProgress} />
+        <InteractiveCard icon={CheckCircle} iconColor="text-blue-400"    title="Resolved"    value={metrics.resolved} />
+        <InteractiveCard icon={Target}      iconColor="text-green-400"   title="Verified"    value={metrics.verified} />
+        <InteractiveCard icon={XCircle}     iconColor="text-red-400"     title="Critical"    value={metrics.critical} />
+        <InteractiveCard icon={DollarSign}  iconColor="text-yellow-400"  title="Cost Impact" value={fmt(metrics.totalCostImpact)} />
       </div>
 
       {/* Toolbar */}
@@ -184,18 +143,18 @@ function SnagsPage() {
           <option value="Major">Major</option>
           <option value="Minor">Minor</option>
         </select>
-        <button onClick={() => setIsModalOpen(true)}
+        <button onClick={() => { setEditingSnag(null); setIsModalOpen(true); }}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shrink-0">
-          <Plus className="w-4 h-4" /><span>New Snag</span>
+          <Plus className="w-4 h-4" />New Snag
         </button>
       </div>
 
-      {/* No project selected */}
+      {/* No project */}
       {!projectId && !projectsLoading && (
         <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-10 text-center">
           <AlertCircle className="w-12 h-12 text-gray-600 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-white mb-2">Select a Project</h3>
-          <p className="text-gray-400 text-sm">Choose a project from the dropdown above to view snags.</p>
+          <p className="text-gray-400 text-sm">Choose a project above to view and manage snags.</p>
         </div>
       )}
 
@@ -207,64 +166,115 @@ function SnagsPage() {
       )}
 
       {/* Error */}
-      {error && (
+      {queryError && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-5">
-          <p className="text-red-400 text-sm">{error}</p>
-          <button onClick={() => queryClient.invalidateQueries({ queryKey: queryKeys.projectSnags(projectId) })}
-            className="mt-3 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm">Retry</button>
+          <p className="text-red-400 text-sm">{(queryError as Error).message}</p>
+          <button onClick={refresh} className="mt-2 px-4 py-1.5 bg-red-600 text-white rounded-lg text-sm">Retry</button>
         </div>
       )}
 
       {/* Empty */}
-      {filtered.length === 0 && !isLoading && !error && projectId && (
+      {filtered.length === 0 && !isLoading && !queryError && projectId && (
         <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-10 text-center">
           <AlertCircle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
           <h3 className="font-semibold text-white mb-2">No Snags Found</h3>
           <p className="text-gray-400 text-sm mb-5">
-            {searchQuery || filterStatus !== 'all' || filterSeverity !== 'all' ? 'Try adjusting your filters.' : 'Create your first snag to get started.'}
+            {searchQuery || filterStatus !== 'all' || filterSeverity !== 'all' ? 'Try adjusting filters.' : 'Log the first site defect.'}
           </p>
-          <button onClick={() => setIsModalOpen(true)} className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-colors">
-            <Plus className="w-4 h-4" />Create First Snag
-          </button>
+          {!searchQuery && filterStatus === 'all' && filterSeverity === 'all' && (
+            <button onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm">
+              <Plus className="w-4 h-4" />Log First Snag
+            </button>
+          )}
         </div>
       )}
 
-      {/* Snag List */}
+      {/* Snag list */}
       {filtered.length > 0 && (
         <div className="space-y-3">
-          {filtered.map(snag => (
-            <div key={snag.id} onClick={() => navigate(`/snags/${snag.id}`)}
-              className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-5 cursor-pointer hover:bg-[#111] hover:border-gray-700 transition-all min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-lg border ${sevColor(snag.severity)}`}>{snag.severity}</span>
-                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-lg border ${stColor(snag.status)}`}>{snag.status}</span>
-                <span className="px-2.5 py-0.5 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-lg border border-purple-500/30">{snag.category}</span>
-              </div>
-              <p className="text-gray-300 text-sm mb-3 line-clamp-2">{snag.description}</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-[#111] rounded-lg p-2.5 border border-gray-800">
-                  <div className="flex items-center gap-1.5 mb-1"><MapPin className="w-3.5 h-3.5 text-blue-400" /><span className="text-xs text-gray-500">Location</span></div>
-                  <p className="text-xs font-semibold text-white truncate">{snag.location}</p>
+          {filtered.map(snag => {
+            const transitions = TRANSITIONS[snag.status] || [];
+            return (
+              <div key={snag.id} className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-5 hover:bg-[#0D0D0D] hover:border-gray-700 transition-all min-w-0">
+                {/* Row 1: badges + actions */}
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-lg border ${SEV_COLOR[snag.severity] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
+                      {snag.severity}
+                    </span>
+                    <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-lg border ${STATUS_COLOR[snag.status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
+                      {snag.status}
+                    </span>
+                    <span className="px-2.5 py-0.5 bg-purple-500/20 text-purple-400 text-xs font-semibold rounded-lg border border-purple-500/30">
+                      {snag.category}
+                    </span>
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2">
+                    {transitions.map(t => (
+                      <button key={t.action}
+                        onClick={() => handleAction(snag, t.action)}
+                        disabled={actionLoading === snag.id + t.action}
+                        className="px-3 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">
+                        {actionLoading === snag.id + t.action ? '…' : t.label}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => { setEditingSnag(snag); setIsModalOpen(true); }}
+                      className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                      title="Edit snag">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                {snag.costImpact > 0 && (
+
+                {/* Description */}
+                <p className="text-gray-300 text-sm mb-3 line-clamp-2">{snag.description}</p>
+
+                {/* Detail grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-[#111] rounded-lg p-2.5 border border-gray-800">
+                    <div className="flex items-center gap-1.5 mb-1"><MapPin className="w-3.5 h-3.5 text-blue-400" /><span className="text-xs text-gray-500">Location</span></div>
+                    <p className="text-xs font-semibold text-white truncate">{snag.location}</p>
+                  </div>
                   <div className="bg-[#111] rounded-lg p-2.5 border border-gray-800">
                     <div className="flex items-center gap-1.5 mb-1"><DollarSign className="w-3.5 h-3.5 text-yellow-400" /><span className="text-xs text-gray-500">Cost Impact</span></div>
-                    <p className="text-xs font-semibold text-yellow-400">{fmt(snag.costImpact)}</p>
+                    <p className="text-xs font-semibold text-yellow-400">{fmt(snag.costImpact || 0)}</p>
                   </div>
-                )}
-                {snag.dueDate && (
                   <div className="bg-[#111] rounded-lg p-2.5 border border-gray-800">
                     <div className="flex items-center gap-1.5 mb-1"><Clock className="w-3.5 h-3.5 text-purple-400" /><span className="text-xs text-gray-500">Due Date</span></div>
-                    <p className="text-xs font-semibold text-white">{new Date(snag.dueDate).toLocaleDateString()}</p>
+                    <p className="text-xs font-semibold text-white">{fmtDate(snag.dueDate)}</p>
                   </div>
-                )}
+                  <div className="bg-[#111] rounded-lg p-2.5 border border-gray-800">
+                    <div className="flex items-center gap-1.5 mb-1"><CheckCircle className="w-3.5 h-3.5 text-green-400" /><span className="text-xs text-gray-500">Logged</span></div>
+                    <p className="text-xs font-semibold text-white">{fmtDate(snag.createdAt)}</p>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      <SnagFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleCreateSnag} projectId={projectId || undefined} />
+      {/* Modal */}
+      <SnagFormModal
+        isOpen={isModalOpen}
+        onClose={() => { setIsModalOpen(false); setEditingSnag(null); }}
+        onSubmit={editingSnag ? handleEdit : handleCreate}
+        projectId={projectId || undefined}
+        initialData={editingSnag ? {
+          projectId: editingSnag.projectId,
+          workPackageId: editingSnag.workPackageId,
+          location: editingSnag.location,
+          description: editingSnag.description,
+          severity: editingSnag.severity,
+          category: editingSnag.category,
+          assignedTo: editingSnag.assignedTo,
+          dueDate: editingSnag.dueDate?.split('T')[0],
+          costImpact: editingSnag.costImpact,
+        } : undefined}
+      />
     </div>
   );
 }

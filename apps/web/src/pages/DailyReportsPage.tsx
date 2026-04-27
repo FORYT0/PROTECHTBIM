@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { dailyReportService } from '../services/dailyReportService';
 import { queryKeys } from '../lib/queryClient';
@@ -11,11 +11,12 @@ import { toast } from '../utils/toast';
 import { Clipboard, Plus, Users, Wrench, AlertTriangle, CheckCircle, Activity, Search, Target, Calendar, Cloud } from 'lucide-react';
 
 function DailyReportsPage() {
-  const navigate = useNavigate();
+
   const { projectId, projects, isLoading: projectsLoading, setProjectId } = useProjectContext();
   const queryClient = useQueryClient();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingReport, setEditingReport] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: reports = [], isLoading, error: queryError } = useQuery({
@@ -229,9 +230,10 @@ function DailyReportsPage() {
         </div>
       )}
 
-      <DailyReportFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleCreate} projectId={projectId || undefined} />
+      <DailyReportFormModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingReport(null); }} initialData={editingReport} onSubmit={handleCreate} projectId={projectId || undefined} />
     </div>
   );
 }
 
 export default DailyReportsPage;
+

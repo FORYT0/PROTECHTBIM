@@ -1,19 +1,47 @@
-=== REMOVING SECRET FROM HISTORY ===
-The following paths are ignored by one of your .gitignore files:
-apps/api/dist-bundle
-hint: Use -f if you really want to add them.
-hint: Disable this message with "git config set advice.addIgnoredFile false"
+=== REBUILD API + SEED BUNDLES ===
+✅ Bundle complete → C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js (653 KB)
+🚀 Start: node apps\api\dist-bundle\main.js
 
-=== STAGED FILES ===
-M  apps/api/src/routes/ai.routes.ts
-M  apps/web/src/services/aiService.ts
-MM git_output.txt
+✅ Seed bundle: dist-bundle/seed.js (102 KB)
+🌱 Run: node apps/api/dist-bundle/seed.js
 
-=== COMMITTING CLEAN ===
-[main 8cb0ce9] fix: AI routes safe when GROQ_API_KEY missing + friendly error messages
- 3 files changed, 58 insertions(+), 35 deletions(-)
 
-=== PUSHING ===
-To https://github.com/FORYT0/PROTECHTBIM.git
-   6dbd1c0..8cb0ce9  main -> main
-DONE
+=== RUN SEED (adds time entries) ===
+🔌 Connecting to database…
+✅ Connected!
+
+👤 Creating users…
+   exists:  Sarah Kamau
+   exists:  James Mwangi
+   exists:  Aisha Otieno
+
+Creating project…
+   exists
+
+Creating work packages…
+   10 work packages
+
+Creating contract…
+   exists
+
+Creating change orders…
+   3 change orders
+
+Creating daily reports…
+   already seeded
+
+Creating snags…
+   already seeded
+
+Creating sprint…
+   already seeded
+
+==================================================
+SEED COMPLETE!
+  Login: admin@protecht.demo / Demo1234!
+  Login: pm@protecht.demo    / Demo1234!
+  Login: eng@protecht.demo   / Demo1234!
+==================================================
+
+
+=== COMMIT ALL FIXES ===

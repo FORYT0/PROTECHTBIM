@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { WorkPackage, CreateWorkPackageRequest } from '@protecht-bim/shared-types';
 import { workPackageService } from '../services/workPackageService';
 import WorkPackageTable from '../components/WorkPackageTable';
@@ -8,68 +7,87 @@ import WorkPackageFilters, { WorkPackageFilterValues } from '../components/WorkP
 import WorkPackageFormModal from '../components/WorkPackageFormModal';
 import WorkPackageDetailDrawer from '../components/WorkPackageDetailDrawer';
 import { InteractiveCard } from '../components/InteractiveCard';
+import { useProjectContext } from '../hooks/useProjectContext';
+import { ProjectPicker } from '../components/ProjectPicker';
 import {
   Package, AlertTriangle, CheckCircle, Clock,
-  Users, Target, Grid, Calendar as CalendarIcon, Plus,
-  Search, Filter, Activity
+  Target, Grid, Calendar as CalendarIcon, List, Plus,
+  Filter, Activity, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
+type ViewMode = 'table' | 'grid' | 'calendar';
+
+const PRIORITY_COLOR: Record<string, string> = {
+  Urgent:  'bg-red-500/20 text-red-400 border-red-500/30',
+  High:    'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  Normal:  'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  Low:     'bg-gray-500/20 text-gray-400 border-gray-500/30',
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  'New':           'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  'In Progress':   'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  'Done':          'bg-green-500/20 text-green-400 border-green-500/30',
+  'Closed':        'bg-green-500/20 text-green-400 border-green-500/30',
+  'Rejected':      'bg-red-500/20 text-red-400 border-red-500/30',
+  'On Hold':       'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
+};
+
 function WorkPackagesPage() {
-  const navigate = useNavigate();
+  const { projectId, projects, isLoading: projectsLoading, setProjectId } = useProjectContext();
   const [workPackages, setWorkPackages] = useState<WorkPackage[]>([]);
-  const [selectedWorkPackage, setSelectedWorkPackage] = useState<WorkPackage | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [selectedWP, setSelectedWP] = useState<WorkPackage | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [sortBy, setSortBy] = useState<string>('createdAt');
+  const [totalItems, setTotalItems] = useState(0);
+  const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const [viewMode, setViewMode] = useState<'table' | 'calendar'>('table');
-
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [filters, setFilters] = useState<WorkPackageFilterValues>({
-    search: '',
-    type: [],
-    status: [],
-    priority: [],
-    assignee_id: '',
+    search: '', type: [], status: [], priority: [], assignee_id: '',
   });
 
-      // Metrics computed from real loaded data
   const now = new Date();
-  const mockWorkPackageMetrics = {
-    totalPackages: workPackages.length,
-    activePackages: workPackages.filter((w: any) => ['in_progress','In Progress','open','New'].includes(w.status)).length,
-    completedPackages: workPackages.filter((w: any) => ['closed','Closed','done','Done'].includes(w.status)).length,
-    onTrack: workPackages.filter((w: any) => (w.percentageDone || 0) >= 50).length,
-    atRisk: workPackages.filter((w: any) => w.dueDate && new Date(w.dueDate) < new Date(Date.now() + 7*86400000) && (w.percentageDone || 0) < 80).length,
-    overdue: workPackages.filter((w: any) => w.dueDate && new Date(w.dueDate) < now && (w.percentageDone || 0) < 100).length,
-    avgCompletion: workPackages.length ? Math.round(workPackages.reduce((s: number, w: any) => s + (w.percentageDone || 0), 0) / workPackages.length) : 0,
-    teamMembers: new Set(workPackages.map((w: any) => w.assigneeId).filter(Boolean)).size,
-    avgDuration: 14,
-    blockedPackages: workPackages.filter((w: any) => w.status === 'blocked').length,
+  const metrics = {
+    total: workPackages.length,
+    active: workPackages.filter(w => ['In Progress', 'New'].includes((w as any).status || '')).length,
+    completed: workPackages.filter(w => ['Done', 'Closed'].includes((w as any).status || '')).length,
+    overdue: workPackages.filter(w => {
+      const d = w.due_date || (w as any).dueDate;
+      return d && new Date(d) < now && !['Done','Closed'].includes((w as any).status || '');
+    }).length,
+    avgCompletion: workPackages.length
+      ? Math.round(workPackages.reduce((s, w) => s + ((w as any).percentageDone || 0), 0) / workPackages.length)
+      : 0,
+    atRisk: workPackages.filter(w => {
+      const d = w.due_date || (w as any).dueDate;
+      return d && new Date(d) < new Date(Date.now() + 7*86400000) && ((w as any).percentageDone || 0) < 80;
+    }).length,
   };
 
   const loadWorkPackages = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      setIsLoading(true);
-      setError(null);
-
       const response = await workPackageService.listWorkPackages({
+        project_id: projectId || undefined,
         search: filters.search || undefined,
         type: filters.type.length > 0 ? filters.type : undefined,
         status: filters.status.length > 0 ? filters.status : undefined,
         priority: filters.priority.length > 0 ? filters.priority : undefined,
         assignee_id: filters.assignee_id || undefined,
         page: viewMode === 'calendar' ? 1 : currentPage,
-        per_page: viewMode === 'calendar' ? 100 : 20,
+        per_page: viewMode === 'calendar' ? 200 : viewMode === 'grid' ? 24 : 20,
         sort_by: sortBy,
         sort_order: sortOrder,
       });
-
       setWorkPackages(response.work_packages);
       setTotalPages(Math.ceil(response.total / response.per_page));
+      setTotalItems(response.total);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load work packages');
     } finally {
@@ -77,426 +95,265 @@ function WorkPackagesPage() {
     }
   };
 
-  useEffect(() => {
-    loadWorkPackages();
-  }, [filters, currentPage, sortBy, sortOrder, viewMode]);
+  useEffect(() => { loadWorkPackages(); }, [filters, currentPage, sortBy, sortOrder, viewMode, projectId]);
 
-  const handleCreateWorkPackage = async (data: CreateWorkPackageRequest) => {
-    try {
-      console.log('WorkPackagesPage - Creating work package:', data);
-      await workPackageService.createWorkPackage(data);
-      console.log('WorkPackagesPage - Work package created, reloading list');
-      await loadWorkPackages();
-      console.log('WorkPackagesPage - List reloaded');
-    } catch (err) {
-      console.error('WorkPackagesPage - Error creating work package:', err);
-      throw err; // Re-throw to let the modal handle the error display
-    }
+  const handleCreate = async (data: CreateWorkPackageRequest) => {
+    await workPackageService.createWorkPackage(data);
+    await loadWorkPackages();
   };
 
-  const handleRowClick = (workPackage: WorkPackage) => {
-    setSelectedWorkPackage(workPackage);
-    setIsDetailDrawerOpen(true);
-  };
-
+  const handleRowClick = (wp: WorkPackage) => { setSelectedWP(wp); setIsDetailDrawerOpen(true); };
   const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
+    setSortBy(field);
+    setSortOrder(sortBy === field && sortOrder === 'asc' ? 'desc' : 'asc');
   };
 
-  const handleFilterChange = (newFilters: WorkPackageFilterValues) => {
-    setFilters(newFilters);
-    setCurrentPage(1);
-  };
-
-  const handleResetFilters = () => {
-    setFilters({
-      search: '',
-      type: [],
-      status: [],
-      priority: [],
-      assignee_id: '',
-    });
-    setCurrentPage(1);
-  };
+  const fmtDate = (d?: string | Date | null) =>
+    d ? new Date(d as any).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
 
   return (
     <div className="space-y-5 pb-8 min-w-0">
-      {/* WORK PACKAGE COMMAND HEADER */}
-      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
-        <div className="flex items-start justify-between">
-          {/* LEFT SIDE */}
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-white mb-3">Work Package Control Center</h1>
-            
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Total Packages:</span>
-                <span className="text-white font-semibold">{mockWorkPackageMetrics.totalPackages}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Active:</span>
-                <span className="text-green-400 font-semibold">{mockWorkPackageMetrics.activePackages}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Completed:</span>
-                <span className="text-blue-400 font-semibold">{mockWorkPackageMetrics.completedPackages}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Blocked:</span>
-                <span className="text-red-400 font-semibold">{mockWorkPackageMetrics.blockedPackages}</span>
-              </div>
-            </div>
+      {/* Header */}
+      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Work Packages</h1>
+            <p className="text-sm text-gray-400 mt-1">Plan, assign, and track all project work items</p>
           </div>
-
-          {/* RIGHT SIDE - EXECUTIVE METRICS */}
-          <div className="grid grid-cols-2 gap-4">
-            <InteractiveCard
-              icon={Target}
-              iconColor="text-blue-400"
-              title="Avg Completion"
-              value={`${mockWorkPackageMetrics.avgCompletion}%`}
-              progress={{ value: mockWorkPackageMetrics.avgCompletion, color: "bg-blue-400" }}
-              to="/work-packages?sort=completion"
-            />
-
-            <InteractiveCard
-              icon={CheckCircle}
-              iconColor="text-green-400"
-              title="On Track"
-              value={mockWorkPackageMetrics.onTrack}
-              subtitle={`${Math.round((mockWorkPackageMetrics.onTrack / mockWorkPackageMetrics.activePackages) * 100)}% of active`}
-              to="/work-packages?filter=on-track"
-            />
-
-            <InteractiveCard
-              icon={AlertTriangle}
-              iconColor="text-orange-400"
-              title="At Risk"
-              value={mockWorkPackageMetrics.atRisk}
-              subtitle="Needs attention"
-              to="/work-packages?filter=at-risk"
-            />
-
-            <InteractiveCard
-              icon={Clock}
-              iconColor="text-red-400"
-              title="Overdue"
-              value={mockWorkPackageMetrics.overdue}
-              subtitle="Immediate action"
-              to="/work-packages?filter=overdue"
-            />
-          </div>
+          <ProjectPicker projectId={projectId} projects={projects} onSelect={setProjectId} isLoading={projectsLoading} />
         </div>
       </div>
 
-      {/* WORK PACKAGE KPI ROW */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {/* Total Packages */}
-        <InteractiveCard
-          icon={Package}
-          iconColor="text-blue-400"
-          title="Total Packages"
-          value={mockWorkPackageMetrics.totalPackages}
-          subtitle="+12 this month"
-          trend={{ value: "+12", direction: "up", color: "text-green-400" }}
-          to="/work-packages?view=all"
-        />
-
-        {/* Active Packages */}
-        <InteractiveCard
-          icon={Activity}
-          iconColor="text-green-400"
-          title="Active Packages"
-          value={mockWorkPackageMetrics.activePackages}
-          badge={{ text: "57%", color: "text-green-400" }}
-          progress={{ value: 57, color: "bg-green-400" }}
-          onClick={() => navigate('/work-packages?status=active')}
-        />
-
-        {/* Completed */}
-        <InteractiveCard
-          icon={CheckCircle}
-          iconColor="text-blue-400"
-          title="Completed"
-          value={mockWorkPackageMetrics.completedPackages}
-          subtitle="+8 this week"
-          badge={{ text: "33%", color: "text-blue-400" }}
-          onClick={() => navigate('/work-packages?status=completed')}
-        />
-
-        {/* On Track */}
-        <InteractiveCard
-          icon={Target}
-          iconColor="text-green-400"
-          title="On Track"
-          value={mockWorkPackageMetrics.onTrack}
-          subtitle="Performing well"
-          badge={{ text: "81%", color: "text-green-400" }}
-          to="/work-packages?filter=on-track"
-        />
-
-        {/* At Risk / Overdue */}
-        <InteractiveCard
-          icon={AlertTriangle}
-          iconColor="text-orange-400"
-          title="At Risk / Overdue"
-          value={mockWorkPackageMetrics.atRisk + mockWorkPackageMetrics.overdue}
-          subtitle="Requires action"
-          badge={{ text: "8%", color: "text-orange-400" }}
-          to="/work-packages?filter=at-risk"
-        />
-
-        {/* Team */}
-        <InteractiveCard
-          icon={Users}
-          iconColor="text-cyan-400"
-          title="Team Members"
-          value={mockWorkPackageMetrics.teamMembers}
-          subtitle={`Avg ${mockWorkPackageMetrics.avgDuration} days`}
-          badge={{ text: `${mockWorkPackageMetrics.avgDuration}d`, color: "text-cyan-400" }}
-          to="/resources"
-        />
+      {/* KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <InteractiveCard icon={Package}      iconColor="text-blue-400"   title="Total"        value={metrics.total} />
+        <InteractiveCard icon={Activity}     iconColor="text-yellow-400" title="Active"       value={metrics.active} />
+        <InteractiveCard icon={CheckCircle}  iconColor="text-green-400"  title="Completed"    value={metrics.completed} />
+        <InteractiveCard icon={AlertTriangle} iconColor="text-red-400"   title="Overdue"      value={metrics.overdue} />
+        <InteractiveCard icon={Clock}        iconColor="text-orange-400" title="At Risk"      value={metrics.atRisk} />
+        <InteractiveCard icon={Target}       iconColor="text-cyan-400"   title="Avg Progress" value={`${metrics.avgCompletion}%`} progress={{ value: metrics.avgCompletion, color: 'bg-cyan-400' }} />
       </div>
 
-      {/* TOOLBAR */}
-      <div className="flex items-center justify-between gap-4">
-        {/* Search & Filters */}
-        <div className="flex-1 flex items-center gap-3">
-          {/* Search */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search work packages..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              className="w-full pl-10 pr-4 py-2 bg-[#0A0A0A] border border-gray-800 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
-            />
-          </div>
-
-          {/* Filter Button */}
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A0A0A] border border-gray-800 rounded-lg text-sm text-gray-300 hover:bg-[#111111] hover:border-gray-700 transition-colors">
-            <Filter className="w-4 h-4" />
-            <span>Filters</span>
-            {(filters.type.length > 0 || filters.status.length > 0 || filters.priority.length > 0 || filters.assignee_id) && (
-              <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-full text-xs">
-                {filters.type.length + filters.status.length + filters.priority.length + (filters.assignee_id ? 1 : 0)}
-              </span>
-            )}
-          </button>
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <span>{totalItems} work package{totalItems !== 1 ? 's' : ''}</span>
+          {projectId && <span className="text-gray-600">· {projects.find(p => p.id === projectId)?.name}</span>}
         </div>
-
-        {/* View Mode & New Package */}
         <div className="flex items-center gap-2">
-          {/* View Mode Toggle */}
+          {/* View toggle: Table / Grid / Calendar */}
           <div className="flex items-center bg-[#0A0A0A] border border-gray-800 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('table')}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === 'table'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:text-gray-300'
-              }`}
-            >
+            <button onClick={() => setViewMode('table')} title="Table view"
+              className={`p-2 rounded-md transition-all ${viewMode === 'table' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-500 hover:text-gray-300'}`}>
+              <List className="w-4 h-4" />
+            </button>
+            <button onClick={() => setViewMode('grid')} title="Grid view"
+              className={`p-2 rounded-md transition-all ${viewMode === 'grid' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-500 hover:text-gray-300'}`}>
               <Grid className="w-4 h-4" />
             </button>
-            <button
-              onClick={() => setViewMode('calendar')}
-              className={`p-2 rounded-md transition-colors ${
-                viewMode === 'calendar'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:text-gray-300'
-              }`}
-            >
+            <button onClick={() => setViewMode('calendar')} title="Calendar view"
+              className={`p-2 rounded-md transition-all ${viewMode === 'calendar' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-500 hover:text-gray-300'}`}>
               <CalendarIcon className="w-4 h-4" />
             </button>
           </div>
-
-          {/* New Package Button */}
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/30"
-          >
-            <Plus className="w-4 h-4" />
-            <span>New Package</span>
+          <button onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-lg shadow-blue-500/20">
+            <Plus className="w-4 h-4" />New Package
           </button>
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-        {/* Filters Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6 sticky top-6">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <Filter className="w-4 h-4" />
-              Filters
-            </h3>
-            <WorkPackageFilters
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              onReset={handleResetFilters}
-            />
+      {/* Main content: sidebar + content */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-4">
+        {/* Filters sidebar */}
+        {viewMode !== 'calendar' && (
+          <div className="lg:col-span-1">
+            <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-5 sticky top-20">
+              <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                <Filter className="w-4 h-4" />Filters
+              </h3>
+              <WorkPackageFilters
+                filters={filters}
+                onFilterChange={f => { setFilters(f); setCurrentPage(1); }}
+                onReset={() => setFilters({ search: '', type: [], status: [], priority: [], assignee_id: '' })}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Work Package List/Calendar */}
-        <div className="lg:col-span-3">
-          {/* Error Message */}
+        {/* Content area */}
+        <div className={viewMode !== 'calendar' ? 'lg:col-span-3 min-w-0' : 'lg:col-span-4 min-w-0'}>
+          {/* Error */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-red-400">Unable to load work packages</p>
-                  <p className="text-xs text-gray-400 mt-1">{error}</p>
-                  <button
-                    onClick={loadWorkPackages}
-                    className="mt-3 text-xs text-red-400 hover:text-red-300 underline"
-                  >
-                    Try again
-                  </button>
-                </div>
-              </div>
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4">
+              <p className="text-sm text-red-400">{error}</p>
+              <button onClick={loadWorkPackages} className="mt-2 text-xs text-red-400 underline">Retry</button>
             </div>
           )}
 
-          {/* Loading State */}
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <div className="relative">
-                <div className="h-16 w-16 animate-spin rounded-full border-4 border-gray-800 border-t-blue-500"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Package className="w-8 h-8 text-blue-500" />
-                </div>
-              </div>
-              <p className="mt-4 text-gray-400">Loading work packages...</p>
+          {/* Loading */}
+          {isLoading && (
+            <div className="flex justify-center py-16">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-800 border-t-blue-500" />
             </div>
-          ) : workPackages.length === 0 ? (
-            <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-12 text-center">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 bg-[#111111] rounded-2xl flex items-center justify-center">
-                  <Package className="w-8 h-8 text-gray-600" />
-                </div>
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2">No Work Packages Found</h3>
-              <p className="text-gray-400 mb-6 max-w-md mx-auto">
-                {filters.search || filters.type.length > 0 || filters.status.length > 0
-                  ? 'No work packages match your filters. Try adjusting your search criteria.'
-                  : 'Get started by creating your first work package.'}
+          )}
+
+          {/* Empty */}
+          {!isLoading && workPackages.length === 0 && !error && (
+            <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-10 text-center">
+              <Package className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+              <h3 className="font-semibold text-white mb-2">No Work Packages</h3>
+              <p className="text-gray-400 text-sm mb-5">
+                {filters.search || filters.type.length || filters.status.length
+                  ? 'No packages match your filters.'
+                  : 'Create the first work package for this project.'}
               </p>
-              {!filters.search && filters.type.length === 0 && filters.status.length === 0 && (
-                <button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-lg shadow-blue-500/30"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Create Your First Work Package</span>
+              {!filters.search && !filters.type.length && !filters.status.length && (
+                <button onClick={() => setIsCreateModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm">
+                  <Plus className="w-4 h-4" />Create Package
                 </button>
               )}
             </div>
-          ) : (
-            <>
-              {viewMode === 'table' ? (
-                <>
-                  <WorkPackageTable
-                    workPackages={workPackages}
-                    onRowClick={handleRowClick}
-                    onSort={handleSort}
-                    sortBy={sortBy}
-                    sortOrder={sortOrder}
-                  />
+          )}
 
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between bg-[#0A0A0A] rounded-xl border border-gray-800 px-6 py-4 mt-4">
-                      <div className="flex flex-1 justify-between sm:hidden">
-                        <button
-                          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                          disabled={currentPage === 1}
-                          className="px-4 py-2 bg-[#111111] border border-gray-800 rounded-lg text-white hover:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          Previous
-                        </button>
-                        <button
-                          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                          disabled={currentPage === totalPages}
-                          className="px-4 py-2 bg-[#111111] border border-gray-800 rounded-lg text-white hover:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors ml-3"
-                        >
-                          Next
-                        </button>
-                      </div>
-                      <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                        <div>
-                          <p className="text-sm text-gray-400">
-                            Page <span className="font-medium text-white">{currentPage}</span> of{' '}
-                            <span className="font-medium text-white">{totalPages}</span>
-                          </p>
-                        </div>
-                        <div>
-                          <nav className="isolate inline-flex -space-x-px rounded-lg" aria-label="Pagination">
-                            <button
-                              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                              disabled={currentPage === 1}
-                              className="relative inline-flex items-center rounded-l-lg border border-gray-800 bg-[#111111] px-4 py-2 text-sm font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                              Previous
-                            </button>
-                            <button
-                              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                              disabled={currentPage === totalPages}
-                              className="relative inline-flex items-center rounded-r-lg border border-gray-800 bg-[#111111] px-4 py-2 text-sm font-medium text-white hover:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                              Next
-                            </button>
-                          </nav>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="h-[calc(100vh-400px)] min-h-[600px] bg-[#0A0A0A] rounded-xl border border-gray-800 p-4">
-                  <CalendarView
-                    workPackages={workPackages}
-                    onWorkPackageClick={handleRowClick}
-                    onDateChange={async (id, start, due) => {
-                      try {
-                        await workPackageService.updateWorkPackage(id, { start_date: start, due_date: due });
-                        loadWorkPackages();
-                      } catch (e) {
-                        console.error('Failed to update date:', e);
-                      }
-                    }}
-                  />
+          {/* ── TABLE VIEW ── */}
+          {!isLoading && workPackages.length > 0 && viewMode === 'table' && (
+            <>
+              <WorkPackageTable
+                workPackages={workPackages}
+                onRowClick={handleRowClick}
+                onSort={handleSort}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+              />
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-[#0A0A0A] rounded-xl border border-gray-800 px-5 py-3 mt-3">
+                  <p className="text-sm text-gray-400">Page <span className="text-white">{currentPage}</span> of <span className="text-white">{totalPages}</span></p>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                      className="p-2 rounded-lg bg-[#111] border border-gray-800 text-gray-400 hover:text-white disabled:opacity-50 transition-colors">
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                      className="p-2 rounded-lg bg-[#111] border border-gray-800 text-gray-400 hover:text-white disabled:opacity-50 transition-colors">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               )}
             </>
           )}
+
+          {/* ── GRID VIEW ── */}
+          {!isLoading && workPackages.length > 0 && viewMode === 'grid' && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {workPackages.map(wp => {
+                  const pct = (wp as any).percentageDone || 0;
+                  const status = (wp as any).status || 'New';
+                  const priority = (wp as any).priority || 'Normal';
+                  const dueDate = wp.due_date || (wp as any).dueDate;
+                  const isOverdue = dueDate && new Date(dueDate) < now && !['Done','Closed'].includes(status);
+
+                  return (
+                    <div key={wp.id}
+                      onClick={() => handleRowClick(wp)}
+                      className="bg-[#0A0A0A] border border-gray-800 rounded-xl p-4 cursor-pointer hover:bg-[#111] hover:border-gray-700 transition-all group min-w-0">
+                      {/* Status + Priority */}
+                      <div className="flex items-center gap-2 mb-3 flex-wrap">
+                        <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-lg border ${STATUS_COLOR[status] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
+                          {status}
+                        </span>
+                        <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-lg border ${PRIORITY_COLOR[priority] || 'bg-gray-500/20 text-gray-400 border-gray-500/30'}`}>
+                          {priority}
+                        </span>
+                        {(wp as any).type && (
+                          <span className="px-2 py-0.5 text-[10px] text-gray-500 bg-gray-800 rounded-lg capitalize">{(wp as any).type}</span>
+                        )}
+                      </div>
+                      {/* Title */}
+                      <h3 className="text-sm font-semibold text-white group-hover:text-blue-400 transition-colors line-clamp-2 mb-3">
+                        {wp.subject}
+                      </h3>
+                      {wp.description && (
+                        <p className="text-xs text-gray-500 line-clamp-2 mb-3">{wp.description}</p>
+                      )}
+                      {/* Progress */}
+                      <div className="space-y-1.5 mb-3">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-500">Progress</span>
+                          <span className="text-gray-400">{pct}%</span>
+                        </div>
+                        <div className="w-full bg-gray-800 rounded-full h-1.5">
+                          <div className={`h-1.5 rounded-full transition-all ${pct >= 100 ? 'bg-green-500' : pct >= 50 ? 'bg-blue-500' : 'bg-orange-500'}`}
+                            style={{ width: `${Math.min(pct, 100)}%` }} />
+                        </div>
+                      </div>
+                      {/* Footer */}
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-800">
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <Clock className="w-3 h-3" />
+                          <span className={isOverdue ? 'text-red-400' : ''}>
+                            {dueDate ? fmtDate(dueDate) : 'No due date'}
+                          </span>
+                        </div>
+                        {(wp as any).assigneeId && (
+                          <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-[10px] font-semibold">
+                            {((wp as any).assigneeId as string).charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Grid pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-[#0A0A0A] rounded-xl border border-gray-800 px-5 py-3 mt-3">
+                  <p className="text-sm text-gray-400">Page <span className="text-white">{currentPage}</span> of <span className="text-white">{totalPages}</span></p>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
+                      className="p-2 rounded-lg bg-[#111] border border-gray-800 text-gray-400 hover:text-white disabled:opacity-50 transition-colors">
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
+                      className="p-2 rounded-lg bg-[#111] border border-gray-800 text-gray-400 hover:text-white disabled:opacity-50 transition-colors">
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ── CALENDAR VIEW ── */}
+          {!isLoading && viewMode === 'calendar' && (
+            <CalendarView
+              workPackages={workPackages}
+              onWorkPackageClick={handleRowClick}
+              onDateChange={async (id, start, due) => {
+                try {
+                  await workPackageService.updateWorkPackage(id, { start_date: start, due_date: due });
+                  loadWorkPackages();
+                } catch {}
+              }}
+            />
+          )}
         </div>
       </div>
 
-      {/* Create Modal */}
+      {/* Modals */}
       <WorkPackageFormModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSubmit={handleCreateWorkPackage}
+        onSubmit={handleCreate}
       />
-
-      {/* Detail Drawer */}
       <WorkPackageDetailDrawer
-        workPackage={selectedWorkPackage}
+        workPackage={selectedWP}
         isOpen={isDetailDrawerOpen}
         onClose={() => setIsDetailDrawerOpen(false)}
-        onUpdate={() => {
-          loadWorkPackages();
-          setIsDetailDrawerOpen(false);
-        }}
+        onUpdate={() => { loadWorkPackages(); setIsDetailDrawerOpen(false); }}
       />
     </div>
   );

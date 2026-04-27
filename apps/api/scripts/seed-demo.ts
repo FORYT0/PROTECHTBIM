@@ -15,6 +15,7 @@ import { ChangeOrder } from '../src/entities/ChangeOrder';
 import { DailyReport } from '../src/entities/DailyReport';
 import { Snag } from '../src/entities/Snag';
 import { Sprint } from '../src/entities/Sprint';
+import { TimeEntry } from '../src/entities/TimeEntry';
 import * as bcrypt from 'bcrypt';
 
 const addDays = (d: Date, n: number) => {
@@ -214,3 +215,5 @@ seed().catch(err => {
   console.error('Seed failed:', err.message || err);
   process.exit(1);
 });
+
+
