@@ -227,7 +227,7 @@ function ContractsPage() {
       {isModalOpen && (
         <ContractFormModal
           projectId={projectId}
-          initialData={editingContract}
+          contract={editingContract}
           isOpen={isModalOpen}
           onClose={() => { setIsModalOpen(false); setEditingContract(null); }}
           onSuccess={handleSuccess}

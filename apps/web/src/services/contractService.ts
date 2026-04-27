@@ -99,19 +99,6 @@ export const contractService = {
     }
   },
 
-  async updateContract(contractId: string, contractData: any): Promise<Contract> {
-    const response = await apiRequest(`/contracts/${contractId}`, {
-      method: 'PATCH',
-      body: JSON.stringify(contractData),
-    });
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(err.error || `Failed to update contract (${response.status})`);
-    }
-    const data = await response.json();
-    return data.contract;
-  },
-
   async getContractsByProjectId(projectId: string): Promise<Contract[]> {
     try {
       const response = await apiRequest(`/contracts/project/${projectId}/all`);
