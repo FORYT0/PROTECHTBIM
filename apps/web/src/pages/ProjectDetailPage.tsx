@@ -11,6 +11,7 @@ import BudgetSetupModal, { BudgetData } from '../components/BudgetSetupModal';
 import { getAuthToken } from '../utils/api';
 import { dashboardService, DashboardData } from '../services/dashboardService';
 import { useQuery } from '@tanstack/react-query';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { 
   Calendar, Clock, DollarSign, Users, Package, AlertTriangle, 
   FileText, CheckCircle, XCircle, AlertCircle,
@@ -221,14 +222,7 @@ function ProjectDetailPage() {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const { formatCurrency } = useCurrency();
 
   if (isLoading) {
     return (

@@ -6,6 +6,7 @@ import { TimelineTable } from '../components/TimelineTable';
 import { InteractiveCard } from '../components/InteractiveCard';
 import TimeEntryService, { TimeEntry } from '../services/TimeEntryService';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
+import { useCurrency } from '../contexts/CurrencyContext';
 import {
   Clock, Users, Calendar, BarChart3,
   Target, AlertCircle, CheckCircle, ArrowUp,
@@ -116,6 +117,8 @@ export const TimeTrackingPage: React.FC = () => {
       nonBillable: dayEntries.filter(e => !e.billable).reduce((sum, e) => sum + e.hours, 0),
     };
   });
+
+  const { formatCurrency } = useCurrency();
 
   const formatHours = (hours: number) => {
     return `${hours.toFixed(1)}h`;
@@ -647,7 +650,7 @@ export const TimeTrackingPage: React.FC = () => {
             <div className="space-y-3">
               <div className="text-center py-4">
                 <p className="text-3xl font-bold text-green-400">
-                  ${laborMetrics.laborCostGenerated.toLocaleString()}
+                  {formatCurrency(laborMetrics.laborCostGenerated)}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">This period</p>
               </div>
@@ -658,7 +661,7 @@ export const TimeTrackingPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Billable Revenue</span>
-                  <span className="text-green-400 font-semibold">${(laborMetrics.billableHours * 100).toLocaleString()}</span>
+                  <span className="text-green-400 font-semibold">{formatCurrency(laborMetrics.billableHours * 100)}</span>
                 </div>
               </div>
             </div>

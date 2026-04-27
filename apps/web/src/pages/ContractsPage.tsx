@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useProjectContext } from '../hooks/useProjectContext';
 import { ProjectPicker } from '../components/ProjectPicker';
-import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { contractService } from '../services/contractService';
 import ContractFormModal from '../components/ContractFormModal';
 import { InteractiveCard } from '../components/InteractiveCard';
+import { useCurrency } from '../contexts/CurrencyContext';
 import {
   FileText, Plus, TrendingUp, Calendar, AlertCircle,
   CheckCircle, Search, Building2, Scale, ArrowUpRight,
@@ -49,7 +50,8 @@ function ContractsPage() {
   const activeContracts = contracts.filter((c: any) => ['active', 'Active', 'ACTIVE'].includes(c.status)).length;
   const variationPct = totalValue > 0 ? (totalVariations / totalValue) * 100 : 0;
 
-  const fmt = (n: number) => new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(n);
+  const { formatCurrency: fmtCur } = useCurrency();
+  const fmt = (n: number) => fmtCur(n, 'KES');
 
   const statusColor = (s: string) => {
     switch ((s || '').toUpperCase()) {
@@ -246,11 +248,11 @@ function ContractsPage() {
                     </td>
                     <td className="px-5 py-4 text-right">
                       <p className="text-sm font-semibold text-white font-mono">
-                        {Number(c.revisedContractValue || c.originalContractValue || 0).toLocaleString()}
+                        {fmt(Number(c.revisedContractValue || c.originalContractValue || 0))}
                       </p>
                       {Number(c.totalApprovedVariations) > 0 && (
                         <p className="text-[10px] text-yellow-400">
-                          +{Number(c.totalApprovedVariations).toLocaleString()} var.
+                          +{fmt(Number(c.totalApprovedVariations))} var.
                         </p>
                       )}
                     </td>

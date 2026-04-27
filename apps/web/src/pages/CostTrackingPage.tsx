@@ -4,6 +4,7 @@ import { CostReportView } from '../components/CostReportView';
 import { InteractiveCard } from '../components/InteractiveCard';
 import CostEntryService, { CostEntry, CostSummary } from '../services/CostEntryService';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { useCurrency } from '../contexts/CurrencyContext';
 import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle, CheckCircle,
   Calendar, PieChart, BarChart3, Download, Settings, RefreshCw,
@@ -149,14 +150,7 @@ export const CostTrackingPage: React.FC = () => {
     }
   });
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const { formatCurrency } = useCurrency();
 
   const getVarianceColor = (variance: number) => {
     if (variance > 5) return 'text-red-400';

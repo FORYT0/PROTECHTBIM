@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Clock, DollarSign, TrendingUp, Users, Package, Calendar, ArrowLeft } from 'lucide-react';
 import axios from 'axios';
 import { getAuthToken } from '../utils/api';
+import { useCurrency } from '../contexts/CurrencyContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
@@ -109,12 +110,7 @@ export const ProjectTimeCostPage: React.FC = () => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
-  };
+  const { formatCurrency } = useCurrency();
 
   const formatHours = (hours: number) => {
     return `${hours.toFixed(2)}h`;

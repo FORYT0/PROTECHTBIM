@@ -7,6 +7,7 @@ import { NotificationBell } from './NotificationBell';
 import { notificationService } from '../services/NotificationService';
 import { AIBrain } from './ai/AIBrain';
 import { useAIStore } from '../stores/useAIStore';
+import { CurrencyToggle } from './CurrencyToggle';
 import {
   Home, Building2, Package, Calendar, Clock,
   DollarSign, Users, LogOut, Menu, X,
@@ -129,6 +130,7 @@ function Layout() {
                   <button onClick={toggleAIBrain} className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-900/30 transition-all" title="AI Copilot">
                     <Sparkles className="w-4 h-4" />
                   </button>
+                  <CurrencyToggle />
                   <NotificationBell />
                   <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#111] border border-gray-800">
                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-xs font-bold">
@@ -148,6 +150,7 @@ function Layout() {
               {user && (
                 <>
                   <button onClick={toggleAIBrain} className="p-1.5 text-blue-400"><Sparkles className="w-4 h-4" /></button>
+                  <CurrencyToggle />
                   <NotificationBell />
                 </>
               )}

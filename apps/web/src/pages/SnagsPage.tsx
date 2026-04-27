@@ -13,6 +13,8 @@ import {
   Target, Activity, Search, XCircle, Clock
 } from 'lucide-react';
 
+import { useCurrency } from '../contexts/CurrencyContext';
+
 function SnagsPage() {
   const navigate = useNavigate();
   const { projectId, projects, isLoading: projectsLoading, setProjectId } = useProjectContext();
@@ -55,7 +57,8 @@ function SnagsPage() {
     }
   };
 
-  const fmt = (n: number) => new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 0 }).format(n);
+  const { formatCurrency: fmtCur } = useCurrency();
+  const fmt = (n: number) => fmtCur(n, 'KES');
 
   const sevColor = (s: string) => ({
     Critical: 'bg-red-500/20 text-red-400 border-red-500/30',

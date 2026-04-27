@@ -7,6 +7,7 @@ import { useProjectRoom } from '../hooks/useRealtimeSync';
 import ChangeOrderFormModal from '../components/ChangeOrderFormModal';
 import { InteractiveCard } from '../components/InteractiveCard';
 import { toast } from '../utils/toast';
+import { useCurrency } from '../contexts/CurrencyContext';
 import {
   TrendingUp, Plus, DollarSign, Clock, AlertCircle, CheckCircle,
   Activity, Search, XCircle, FileText, Target
@@ -63,14 +64,7 @@ function ChangeOrdersPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const { formatCurrency } = useCurrency();
 
   const getStatusColor = (status: string) => {
     switch (status) {

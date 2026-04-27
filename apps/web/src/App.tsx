@@ -1,6 +1,7 @@
 import { useRealtimeSync } from './hooks/useRealtimeSync';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 import { Toaster } from 'react-hot-toast';
 import { GlobalWebSocketListener } from './components/GlobalWebSocketListener';
 import Layout from './components/Layout';
@@ -40,6 +41,7 @@ function App() {
 
   return (
     <AuthProvider>
+      <CurrencyProvider>
       <Toaster position="top-right" toastOptions={{
         style: {
           background: '#1f2937',
@@ -87,6 +89,7 @@ function App() {
           </Route>
         </Routes>
       </Suspense>
+    </CurrencyProvider>
     </AuthProvider>
   );
 }
