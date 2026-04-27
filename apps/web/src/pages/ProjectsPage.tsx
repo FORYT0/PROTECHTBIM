@@ -73,26 +73,110 @@ function ProjectsPage() {
   return (
     <div className="space-y-5 pb-8 min-w-0">
 
-      {/* Header */}
-      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Portfolio Command Center</h1>
-            <p className="text-sm text-gray-400 mt-1">Manage and monitor all construction projects</p>
-          </div>
-          <div className="grid grid-cols-4 gap-3 text-center">
-            {[
-              { label: 'Total', value: metrics.totalProjects, color: 'text-white' },
-              { label: 'Active', value: metrics.activeProjects, color: 'text-green-400' },
-              { label: 'On Hold', value: metrics.onHold, color: 'text-yellow-400' },
-              { label: 'Done', value: metrics.completed, color: 'text-blue-400' },
-            ].map(m => (
-              <div key={m.label} className="bg-[#111] rounded-lg px-3 py-2 border border-gray-800">
-                <p className={`text-xl font-bold ${m.color}`}>{m.value}</p>
-                <p className="text-[10px] text-gray-500">{m.label}</p>
+      {/* PORTFOLIO INTELLIGENCE HEADER */}
+      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
+        <div className="flex items-start justify-between">
+          {/* LEFT SIDE */}
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-white mb-3">Portfolio Command Center</h1>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Total Projects:</span>
+                <span className="text-white font-semibold">{metrics.totalProjects}</span>
               </div>
-            ))}
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Active Projects:</span>
+                <span className="text-green-400 font-semibold">{metrics.activeProjects}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">On Hold:</span>
+                <span className="text-yellow-400 font-semibold">{metrics.onHold}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Completed:</span>
+                <span className="text-blue-400 font-semibold">{metrics.completed}</span>
+              </div>
+            </div>
           </div>
+
+          {/* RIGHT SIDE - EXECUTIVE METRICS */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <Building2 className="w-5 h-5 text-blue-400" />
+                <span className="text-xs text-gray-400">Total Projects</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{metrics.totalProjects}</p>
+              <span className="text-xs text-gray-400">In portfolio</span>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="w-5 h-5 text-green-400" />
+                <span className="text-xs text-gray-400">Active</span>
+              </div>
+              <p className="text-2xl font-bold text-green-400">{metrics.activeProjects}</p>
+              <div className="w-full bg-gray-800 rounded-full h-1.5 mt-2">
+                <div className="bg-green-400 h-1.5 rounded-full transition-all"
+                  style={{ width: `${metrics.totalProjects > 0 ? (metrics.activeProjects / metrics.totalProjects) * 100 : 0}%` }} />
+              </div>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="w-5 h-5 text-blue-400" />
+                <span className="text-xs text-gray-400">Completed</span>
+              </div>
+              <p className="text-2xl font-bold text-blue-400">{metrics.completed}</p>
+              <span className="text-xs text-gray-400">Delivered</span>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                <span className="text-xs text-gray-400">On Hold</span>
+              </div>
+              <p className="text-2xl font-bold text-yellow-400">{metrics.onHold}</p>
+              <span className="text-xs text-yellow-400">{metrics.onHold > 0 ? 'Needs review' : 'None paused'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* PORTFOLIO KPI ROW */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-4 hover:border-gray-700 transition-colors">
+          <div className="flex items-center gap-2 mb-2"><Building2 className="w-4 h-4 text-blue-400" /></div>
+          <p className="text-2xl font-bold text-white">{metrics.totalProjects}</p>
+          <p className="text-xs text-gray-400 mt-1">Total Projects</p>
+        </div>
+        <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-4 hover:border-gray-700 transition-colors">
+          <div className="flex items-center gap-2 mb-2"><Activity className="w-4 h-4 text-green-400" /></div>
+          <p className="text-2xl font-bold text-green-400">{metrics.activeProjects}</p>
+          <p className="text-xs text-gray-400 mt-1">Active</p>
+          <div className="w-full bg-gray-800 rounded-full h-1 mt-2">
+            <div className="bg-green-400 h-1 rounded-full" style={{ width: `${metrics.totalProjects > 0 ? (metrics.activeProjects / metrics.totalProjects) * 100 : 0}%` }} />
+          </div>
+        </div>
+        <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-4 hover:border-gray-700 transition-colors">
+          <div className="flex items-center gap-2 mb-2"><CheckCircle className="w-4 h-4 text-blue-400" /></div>
+          <p className="text-2xl font-bold text-blue-400">{metrics.completed}</p>
+          <p className="text-xs text-gray-400 mt-1">Completed</p>
+        </div>
+        <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-4 hover:border-gray-700 transition-colors">
+          <div className="flex items-center gap-2 mb-2"><AlertTriangle className="w-4 h-4 text-yellow-400" /></div>
+          <p className="text-2xl font-bold text-yellow-400">{metrics.onHold}</p>
+          <p className="text-xs text-gray-400 mt-1">On Hold</p>
+        </div>
+        <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-4 hover:border-gray-700 transition-colors">
+          <div className="flex items-center gap-2 mb-2"><Target className="w-4 h-4 text-cyan-400" /></div>
+          <p className="text-2xl font-bold text-white">{metrics.totalProjects > 0 ? Math.round((metrics.activeProjects / metrics.totalProjects) * 100) : 0}%</p>
+          <p className="text-xs text-gray-400 mt-1">Active Rate</p>
+          <div className="w-full bg-gray-800 rounded-full h-1 mt-2">
+            <div className="bg-cyan-400 h-1 rounded-full" style={{ width: `${metrics.totalProjects > 0 ? (metrics.activeProjects / metrics.totalProjects) * 100 : 0}%` }} />
+          </div>
+        </div>
+        <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-4 hover:border-gray-700 transition-colors">
+          <div className="flex items-center gap-2 mb-2"><TrendingUp className="w-4 h-4 text-purple-400" /></div>
+          <p className="text-2xl font-bold text-white">{metrics.totalProjects > 0 ? Math.round((metrics.completed / metrics.totalProjects) * 100) : 0}%</p>
+          <p className="text-xs text-gray-400 mt-1">Completion Rate</p>
         </div>
       </div>
 

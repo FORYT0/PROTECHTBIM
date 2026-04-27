@@ -58,14 +58,71 @@ function DailyReportsPage() {
 
   return (
     <div className="space-y-5 pb-8 min-w-0">
-      {/* Header */}
-      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Daily Site Reports</h1>
-            <p className="text-sm text-gray-400 mt-1">Track daily site progress, manpower and activities</p>
+      {/* DAILY REPORTS INTELLIGENCE HEADER */}
+      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
+        <div className="flex items-start justify-between">
+          {/* LEFT SIDE */}
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-white mb-3">Daily Site Intelligence Center</h1>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Total Reports:</span>
+                <span className="text-white font-semibold">{metrics.total}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">This Week:</span>
+                <span className="text-blue-400 font-semibold">{metrics.thisWeek}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Avg Manpower:</span>
+                <span className="text-white font-semibold">{metrics.avgManpower} workers/day</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Delays Reported:</span>
+                <span className={`font-semibold ${metrics.delays > 0 ? 'text-orange-400' : 'text-green-400'}`}>{metrics.delays}</span>
+              </div>
+            </div>
+            <ProjectPicker projectId={projectId} projects={projects} onSelect={setProjectId} isLoading={projectsLoading} />
           </div>
-          <ProjectPicker projectId={projectId} projects={projects} onSelect={setProjectId} isLoading={projectsLoading} />
+
+          {/* RIGHT SIDE - EXECUTIVE METRICS */}
+          <div className="grid grid-cols-2 gap-4 ml-6">
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <Clipboard className="w-5 h-5 text-blue-400" />
+                <span className="text-xs text-gray-400">Total Reports</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{metrics.total}</p>
+              <span className="text-xs text-gray-400">All time</span>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity className="w-5 h-5 text-blue-400" />
+                <span className="text-xs text-gray-400">This Week</span>
+              </div>
+              <p className="text-2xl font-bold text-blue-400">{metrics.thisWeek}</p>
+              <div className="w-full bg-gray-800 rounded-full h-1.5 mt-2">
+                <div className="bg-blue-400 h-1.5 rounded-full transition-all"
+                  style={{ width: `${metrics.total > 0 ? Math.min((metrics.thisWeek / metrics.total) * 100, 100) : 0}%` }} />
+              </div>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-5 h-5 text-green-400" />
+                <span className="text-xs text-gray-400">Avg Manpower</span>
+              </div>
+              <p className="text-2xl font-bold text-green-400">{metrics.avgManpower}</p>
+              <span className="text-xs text-gray-400">workers/day</span>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="w-5 h-5 text-orange-400" />
+                <span className="text-xs text-gray-400">Delays</span>
+              </div>
+              <p className={`text-2xl font-bold ${metrics.delays > 0 ? 'text-orange-400' : 'text-green-400'}`}>{metrics.delays}</p>
+              <span className={`text-xs ${metrics.delays > 0 ? 'text-orange-400' : 'text-green-400'}`}>{metrics.delays > 0 ? 'Reported' : 'None reported'}</span>
+            </div>
+          </div>
         </div>
       </div>
 

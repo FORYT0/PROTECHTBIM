@@ -70,18 +70,75 @@ function ContractsPage() {
   return (
     <div className="space-y-5 pb-8 min-w-0">
 
-      {/* Header */}
-      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-5">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Contract Management</h1>
-            <p className="text-sm text-gray-400 mt-1">Lump sum, BOQ and EPC contract administration</p>
+      {/* CONTRACT INTELLIGENCE HEADER */}
+      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
+        <div className="flex items-start justify-between">
+          {/* LEFT SIDE */}
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-white mb-3">Contract Management Center</h1>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Total Contracts:</span>
+                <span className="text-white font-semibold">{contracts.length}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Active:</span>
+                <span className="text-green-400 font-semibold">{activeContracts}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Portfolio Value:</span>
+                <span className="text-white font-semibold">{fmt(totalValue)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Variation %:</span>
+                <span className="text-yellow-400 font-semibold">{variationPct.toFixed(1)}%</span>
+              </div>
+            </div>
+            <ProjectPicker projectId={projectId} projects={projects} onSelect={setProjectId} isLoading={projectsLoading} />
           </div>
-          <ProjectPicker projectId={projectId} projects={projects} onSelect={setProjectId} isLoading={projectsLoading} />
+
+          {/* RIGHT SIDE - EXECUTIVE METRICS */}
+          <div className="grid grid-cols-2 gap-4 ml-6">
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <FileText className="w-5 h-5 text-blue-400" />
+                <span className="text-xs text-gray-400">Total Contracts</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{contracts.length}</p>
+              <span className="text-xs text-gray-400">In portfolio</span>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="w-5 h-5 text-green-400" />
+                <span className="text-xs text-gray-400">Active</span>
+              </div>
+              <p className="text-2xl font-bold text-green-400">{activeContracts}</p>
+              <div className="w-full bg-gray-800 rounded-full h-1.5 mt-2">
+                <div className="bg-green-400 h-1.5 rounded-full transition-all"
+                  style={{ width: `${contracts.length > 0 ? (activeContracts / contracts.length) * 100 : 0}%` }} />
+              </div>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="w-5 h-5 text-white" />
+                <span className="text-xs text-gray-400">Portfolio Value</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{fmt(totalValue)}</p>
+              <span className="text-xs text-gray-400">Total contracted</span>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-5 h-5 text-yellow-400" />
+                <span className="text-xs text-gray-400">Variation %</span>
+              </div>
+              <p className="text-2xl font-bold text-yellow-400">{variationPct.toFixed(1)}%</p>
+              <span className="text-xs text-gray-400">{fmt(totalVariations)} total</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* KPI cards */}
+      {/* CONTRACT KPI ROW */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <InteractiveCard icon={FileText}    iconColor="text-blue-400"   title="Total Contracts"   value={contracts.length} />
         <InteractiveCard icon={CheckCircle} iconColor="text-green-400"  title="Active"            value={activeContracts} badge={{ text: 'Live', color: 'text-green-400' }} />

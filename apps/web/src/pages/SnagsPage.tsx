@@ -81,14 +81,71 @@ function SnagsPage() {
 
   return (
     <div className="space-y-5 pb-8 min-w-0">
-      {/* Header */}
-      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-5">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-white">Snag & Defect Management</h1>
-            <p className="text-sm text-gray-400 mt-1">Track and resolve site defects and punch list items</p>
+      {/* SNAG INTELLIGENCE HEADER */}
+      <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
+        <div className="flex items-start justify-between">
+          {/* LEFT SIDE */}
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-white mb-3">Snag & Defect Control Center</h1>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Total Snags:</span>
+                <span className="text-white font-semibold">{metrics.total}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Open:</span>
+                <span className="text-red-400 font-semibold">{metrics.open}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Critical:</span>
+                <span className="text-red-400 font-semibold">{metrics.critical}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-500">Cost Impact:</span>
+                <span className="text-yellow-400 font-semibold">{fmt(metrics.totalCostImpact)}</span>
+              </div>
+            </div>
+            <ProjectPicker projectId={projectId} projects={projects} onSelect={setProjectId} isLoading={projectsLoading} />
           </div>
-          <ProjectPicker projectId={projectId} projects={projects} onSelect={setProjectId} isLoading={projectsLoading} />
+
+          {/* RIGHT SIDE - EXECUTIVE METRICS */}
+          <div className="grid grid-cols-2 gap-4 ml-6">
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="w-5 h-5 text-orange-400" />
+                <span className="text-xs text-gray-400">Total Snags</span>
+              </div>
+              <p className="text-2xl font-bold text-white">{metrics.total}</p>
+              <span className="text-xs text-gray-400">All items</span>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <XCircle className="w-5 h-5 text-red-400" />
+                <span className="text-xs text-gray-400">Critical</span>
+              </div>
+              <p className="text-2xl font-bold text-red-400">{metrics.critical}</p>
+              <span className="text-xs text-red-400">{metrics.critical > 0 ? 'Urgent action' : 'None critical'}</span>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="w-5 h-5 text-purple-400" />
+                <span className="text-xs text-gray-400">Resolved</span>
+              </div>
+              <p className="text-2xl font-bold text-purple-400">{metrics.resolved}</p>
+              <div className="w-full bg-gray-800 rounded-full h-1.5 mt-2">
+                <div className="bg-purple-400 h-1.5 rounded-full transition-all"
+                  style={{ width: `${metrics.total > 0 ? (metrics.resolved / metrics.total) * 100 : 0}%` }} />
+              </div>
+            </div>
+            <div className="bg-[#111111] rounded-lg p-4 border border-gray-800 min-w-[160px]">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="w-5 h-5 text-yellow-400" />
+                <span className="text-xs text-gray-400">Cost Impact</span>
+              </div>
+              <p className="text-2xl font-bold text-yellow-400">{fmt(metrics.totalCostImpact)}</p>
+              <span className="text-xs text-gray-400">Estimated</span>
+            </div>
+          </div>
         </div>
       </div>
 
