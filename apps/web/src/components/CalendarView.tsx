@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { WorkPackage, Priority } from '@protecht-bim/shared-types';
+import { WorkPackage } from '@protecht-bim/shared-types';
+import { ChevronLeft, ChevronRight, X, Grid, List, Package, Calendar, Clock, CheckCircle, AlertTriangle } from 'lucide-react';
 
-export type CalendarViewType = 'day' | 'week' | 'month';
+export type CalendarViewType = 'month';
 
 export interface CalendarViewProps {
   workPackages: WorkPackage[];
@@ -9,356 +10,272 @@ export interface CalendarViewProps {
   onDateChange: (workPackageId: string, newStartDate: Date, newDueDate: Date) => void;
 }
 
-interface CalendarEvent {
-  workPackage: WorkPackage;
-  startDate: Date;
-  dueDate: Date;
+interface DayPopupState {
+  date: Date;
+  packages: WorkPackage[];
 }
 
-const CalendarView: React.FC<CalendarViewProps> = ({
-  workPackages,
-  onWorkPackageClick,
-  onDateChange,
-}) => {
-  const [viewType, setViewType] = useState<CalendarViewType>('month');
+type PopupViewMode = 'grid' | 'list';
+
+const statusColor = (status: string) => {
+  const s = (status || '').toLowerCase().replace(' ', '_').replace('-', '_');
+  if (s.includes('closed') || s.includes('done')) return 'bg-green-500/20 text-green-400 border-green-500/30';
+  if (s.includes('progress')) return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+  if (s.includes('new') || s === '') return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+};
+
+const priorityColor = (priority: string) => {
+  switch ((priority || '').toLowerCase()) {
+    case 'urgent': return 'bg-red-500';
+    case 'high': return 'bg-orange-500';
+    case 'normal': case 'medium': return 'bg-blue-500';
+    default: return 'bg-gray-500';
+  }
+};
+
+const CalendarView: React.FC<CalendarViewProps> = ({ workPackages, onWorkPackageClick }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [draggedEvent, setDraggedEvent] = useState<CalendarEvent | null>(null);
+  const [dayPopup, setDayPopup] = useState<DayPopupState | null>(null);
+  const [popupView, setPopupView] = useState<PopupViewMode>('list');
 
-  // Convert work packages to calendar events
-  const events = useMemo(() => {
-    return workPackages
-      .filter((wp) => wp.start_date || wp.due_date)
-      .map((wp) => {
-        const start = wp.start_date ? new Date(wp.start_date) : new Date(wp.due_date!);
-        const due = wp.due_date ? new Date(wp.due_date) : new Date(wp.start_date!);
-        return {
-          workPackage: wp,
-          startDate: start,
-          dueDate: due,
-        };
-      });
-  }, [workPackages]);
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-  // Get days to display based on view type
-  const displayDays = useMemo(() => {
-    const days: Date[] = [];
-    const start = new Date(currentDate);
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startDow = firstDay.getDay(); // 0=Sun
+  const totalDays = lastDay.getDate();
 
-    if (viewType === 'day') {
-      days.push(new Date(start));
-    } else if (viewType === 'week') {
-      const dayOfWeek = start.getDay();
-      start.setDate(start.getDate() - dayOfWeek);
-      for (let i = 0; i < 7; i++) {
-        days.push(new Date(start));
-        start.setDate(start.getDate() + 1);
+  // Build day grid: 6 weeks × 7 days
+  const calendarDays: (Date | null)[] = [];
+  for (let i = 0; i < startDow; i++) calendarDays.push(null);
+  for (let d = 1; d <= totalDays; d++) calendarDays.push(new Date(year, month, d));
+
+  // Map of date-key → packages active on that day
+  const dayPackages = useMemo(() => {
+    const map = new Map<string, WorkPackage[]>();
+    workPackages.forEach(wp => {
+      const start = wp.start_date ? new Date(wp.start_date) : wp.startDate ? new Date(wp.startDate as any) : null;
+      const end = wp.due_date ? new Date(wp.due_date) : wp.dueDate ? new Date(wp.dueDate as any) : null;
+      if (!start && !end) return;
+
+      const s = start || end!;
+      const e = end || start!;
+
+      // iterate each calendar day in view
+      for (let d = 1; d <= totalDays; d++) {
+        const day = new Date(year, month, d);
+        if (day >= new Date(s.getFullYear(), s.getMonth(), s.getDate()) &&
+            day <= new Date(e.getFullYear(), e.getMonth(), e.getDate())) {
+          const key = `${year}-${month}-${d}`;
+          if (!map.has(key)) map.set(key, []);
+          map.get(key)!.push(wp);
+        }
       }
-    } else if (viewType === 'month') {
-      start.setDate(1);
-      const firstDayOfWeek = start.getDay();
-      start.setDate(start.getDate() - firstDayOfWeek);
-      for (let i = 0; i < 42; i++) {
-        days.push(new Date(start));
-        start.setDate(start.getDate() + 1);
-      }
-    }
-    return days;
-  }, [currentDate, viewType]);
-
-  const getEventsForDay = (day: Date): CalendarEvent[] => {
-    const dayStart = new Date(day);
-    dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(day);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    return events.filter((event) => {
-      return event.startDate <= dayEnd && event.dueDate >= dayStart;
     });
+    return map;
+  }, [workPackages, year, month, totalDays]);
+
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const today = new Date();
+
+  const handleDayClick = (date: Date) => {
+    const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    const pkgs = dayPackages.get(key) || [];
+    setDayPopup({ date, packages: pkgs });
   };
 
-  const isCurrentMonth = (day: Date): boolean => {
-    return day.getMonth() === currentDate.getMonth();
-  };
+  const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const isToday = (day: Date): boolean => {
-    const today = new Date();
-    return (
-      day.getDate() === today.getDate() &&
-      day.getMonth() === today.getMonth() &&
-      day.getFullYear() === today.getFullYear()
-    );
-  };
-
-  const handleDragStart = (event: CalendarEvent, e: React.DragEvent) => {
-    setDraggedEvent(event);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (day: Date, e: React.DragEvent) => {
-    e.preventDefault();
-    if (!draggedEvent) return;
-
-    const duration = draggedEvent.dueDate.getTime() - draggedEvent.startDate.getTime();
-    const newStartDate = new Date(day);
-    newStartDate.setHours(draggedEvent.startDate.getHours());
-    const newDueDate = new Date(newStartDate.getTime() + duration);
-
-    onDateChange(draggedEvent.workPackage.id, newStartDate, newDueDate);
-    setDraggedEvent(null);
-  };
-
-  const getPriorityColor = (priority: string | undefined): string => {
-    switch (priority) {
-      case Priority.URGENT:
-        return 'bg-error-500/20 text-error-400 border border-error-500/30';
-      case Priority.HIGH:
-        return 'bg-warning-500/20 text-warning-400 border border-warning-500/30';
-      case Priority.NORMAL:
-        return 'bg-primary-500/20 text-primary-400 border border-primary-500/30';
-      case Priority.LOW:
-        return 'bg-surface-light text-secondary border border-surface-light';
-      default:
-        return 'bg-surface-light text-secondary border border-surface-light';
-    }
-  };
-
-  const navigatePrevious = () => {
-    const newDate = new Date(currentDate);
-    if (viewType === 'day') newDate.setDate(newDate.getDate() - 1);
-    else if (viewType === 'week') newDate.setDate(newDate.getDate() - 7);
-    else if (viewType === 'month') newDate.setMonth(newDate.getMonth() - 1);
-    setCurrentDate(newDate);
-  };
-
-  const navigateNext = () => {
-    const newDate = new Date(currentDate);
-    if (viewType === 'day') newDate.setDate(newDate.getDate() + 1);
-    else if (viewType === 'week') newDate.setDate(newDate.getDate() + 7);
-    else if (viewType === 'month') newDate.setMonth(newDate.getMonth() + 1);
-    setCurrentDate(newDate);
-  };
-
-  const navigateToday = () => setCurrentDate(new Date());
-
-  const getDateRangeText = (): string => {
-    if (viewType === 'day') {
-      return currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    } else if (viewType === 'week') {
-      const start = new Date(currentDate);
-      start.setDate(start.getDate() - start.getDay());
-      const end = new Date(start);
-      end.setDate(end.getDate() + 6);
-      return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-    } else {
-      return currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-    }
-  };
-
-  const renderDayView = () => {
-    const day = displayDays[0];
-    const dayEvents = getEventsForDay(day);
-
-    return (
-      <div className="flex-1 overflow-auto rounded-lg border border-surface-light bg-surface">
-        <div className="min-h-full">
-          <div className="sticky top-0 z-10 bg-surface/95 backdrop-blur-sm border-b border-surface-light p-4">
-            <h2 className="text-lg font-semibold text-white">
-              {day.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </h2>
-          </div>
-          <div
-            className="p-4 space-y-2"
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(day, e)}
-          >
-            {dayEvents.length === 0 ? (
-              <p className="text-hint text-center py-8">No work packages scheduled for this day</p>
-            ) : (
-              dayEvents.map((event) => (
-                <div
-                  key={event.workPackage.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(event, e)}
-                  onClick={() => onWorkPackageClick(event.workPackage)}
-                  className={`${getPriorityColor(event.workPackage.priority)} p-3 rounded-lg cursor-pointer hover:opacity-80 transition-opacity`}
-                >
-                  <div className="font-medium text-white">{event.workPackage.subject}</div>
-                  <div className="text-sm opacity-90">
-                    {event.workPackage.type} • {event.workPackage.status}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+  return (
+    <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 overflow-hidden">
+      {/* Calendar Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+        <button onClick={prevMonth} className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors">
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <div className="text-center">
+          <h3 className="font-semibold text-white">{monthName}</h3>
+          <p className="text-xs text-gray-500">{workPackages.length} packages in view</p>
         </div>
+        <button onClick={nextMonth} className="p-2 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors">
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
-    );
-  };
 
-  const renderWeekView = () => (
-    <div className="flex-1 overflow-auto rounded-lg border border-surface-light">
-      <div className="grid grid-cols-7 gap-px bg-surface-light">
-        {displayDays.map((day, index) => {
-          const dayEvents = getEventsForDay(day);
-          return (
-            <div
-              key={index}
-              className="bg-surface min-h-[400px]"
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(day, e)}
-            >
-              <div className={`p-3 text-center border-b border-surface-light ${isToday(day) ? 'bg-primary-500/10' : ''}`}>
-                <div className="text-xs font-medium text-hint uppercase tracking-wider">
-                  {day.toLocaleDateString('en-US', { weekday: 'short' })}
-                </div>
-                <div className={`text-xl mt-1 ${isToday(day) ? 'text-primary-400 font-bold' : 'text-secondary'}`}>
-                  {day.getDate()}
-                </div>
-              </div>
-              <div className="p-2 space-y-2">
-                {dayEvents.map((event) => (
-                  <div
-                    key={event.workPackage.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(event, e)}
-                    onClick={() => onWorkPackageClick(event.workPackage)}
-                    className={`${getPriorityColor(event.workPackage.priority)} text-xs p-2 rounded cursor-pointer hover:opacity-80 transition-opacity truncate shadow-sm`}
-                    title={event.workPackage.subject}
-                  >
-                    {event.workPackage.subject}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  const renderMonthView = () => (
-    <div className="flex-1 overflow-auto rounded-lg border border-surface-light">
-      <div className="grid grid-cols-7 gap-px bg-surface-light">
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-          <div key={day} className="bg-surface p-2 text-center text-xs font-medium text-hint uppercase tracking-wider">
-            {day}
-          </div>
+      {/* Day labels */}
+      <div className="grid grid-cols-7 border-b border-gray-800">
+        {dayLabels.map(d => (
+          <div key={d} className="py-2 text-center text-xs font-medium text-gray-500">{d}</div>
         ))}
-        {displayDays.map((day, index) => {
-          const dayEvents = getEventsForDay(day);
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7">
+        {calendarDays.map((date, i) => {
+          if (!date) {
+            return <div key={`empty-${i}`} className="h-24 border-b border-r border-gray-800/50 bg-[#050505]" />;
+          }
+
+          const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+          const pkgs = dayPackages.get(key) || [];
+          const isToday = date.toDateString() === today.toDateString();
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
           return (
-            <div
-              key={index}
-              className={`bg-surface min-h-[140px] p-1 ${!isCurrentMonth(day) ? 'opacity-40 bg-surface-light/30' : ''}`}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(day, e)}
-            >
-              <div className="flex justify-end mb-1">
-                <span className={`w-7 h-7 flex items-center justify-center rounded-full text-sm ${isToday(day) ? 'bg-primary-500 text-white font-bold' : 'text-secondary'}`}>
-                  {day.getDate()}
+            <div key={key}
+              onClick={() => handleDayClick(date)}
+              className={`h-24 border-b border-r border-gray-800/50 p-1.5 cursor-pointer transition-colors overflow-hidden group
+                ${isToday ? 'bg-blue-500/5 border-blue-500/20' : isWeekend ? 'bg-[#050505]' : 'hover:bg-[#111]'}`}>
+              {/* Day number */}
+              <div className={`text-xs font-medium mb-1 flex items-center justify-between ${isToday ? 'text-blue-400' : 'text-gray-400'}`}>
+                <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[11px] ${isToday ? 'bg-blue-600 text-white' : ''}`}>
+                  {date.getDate()}
                 </span>
+                {pkgs.length > 0 && (
+                  <span className="text-[9px] text-gray-600 group-hover:text-gray-400">{pkgs.length}</span>
+                )}
               </div>
-              <div className="space-y-1">
-                {dayEvents.slice(0, 4).map((event) => (
-                  <div
-                    key={event.workPackage.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(event, e)}
-                    onClick={() => onWorkPackageClick(event.workPackage)}
-                    className={`${getPriorityColor(event.workPackage.priority)} text-[10px] sm:text-xs py-1 px-1.5 rounded cursor-pointer hover:opacity-80 transition-opacity truncate shadow-sm leading-tight`}
-                    title={event.workPackage.subject}
-                  >
-                    {event.workPackage.subject}
+              {/* Package pills */}
+              <div className="space-y-0.5">
+                {pkgs.slice(0, 3).map((wp, j) => (
+                  <div key={wp.id}
+                    onClick={(e) => { e.stopPropagation(); onWorkPackageClick(wp); }}
+                    className="text-[9px] leading-none px-1.5 py-1 rounded truncate font-medium cursor-pointer hover:opacity-80 transition-opacity"
+                    style={{ backgroundColor: `${['#1d4ed8','#b45309','#15803d','#7c3aed','#0891b2'][j % 5]}30`, color: ['#93c5fd','#fcd34d','#86efac','#c4b5fd','#67e8f9'][j % 5] }}>
+                    {wp.subject}
                   </div>
                 ))}
-                {dayEvents.length > 4 && (
-                  <div className="text-[10px] text-hint text-center font-medium mt-1">
-                    +{dayEvents.length - 4} more
-                  </div>
+                {pkgs.length > 3 && (
+                  <div className="text-[9px] text-gray-600 px-1">+{pkgs.length - 3} more</div>
                 )}
               </div>
             </div>
           );
         })}
       </div>
-    </div>
-  );
 
-  return (
-    <div className="flex flex-col h-full space-y-4 animate-fade-in">
-      {/* Calendar Controls Hub */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 card px-4 py-3 sm:px-6">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <button
-              onClick={navigatePrevious}
-              className="p-1.5 sm:px-3 sm:py-1.5 text-sm font-medium text-secondary bg-surface-light hover:bg-white/10 hover:text-white rounded-md transition-colors"
-              aria-label="Previous"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <button
-              onClick={navigateToday}
-              className="px-3 py-1.5 text-sm font-medium text-secondary bg-surface-light hover:bg-white/10 hover:text-white rounded-md transition-colors"
-            >
-              Today
-            </button>
-            <button
-              onClick={navigateNext}
-              className="p-1.5 sm:px-3 sm:py-1.5 text-sm font-medium text-secondary bg-surface-light hover:bg-white/10 hover:text-white rounded-md transition-colors"
-              aria-label="Next"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-          <div className="text-base sm:text-lg font-semibold text-white truncate min-w-[150px]">
-            {getDateRangeText()}
+      {/* Day Popup Modal */}
+      {dayPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setDayPopup(null)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative bg-[#0A0A0A] border border-gray-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}>
+
+            {/* Popup Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 shrink-0">
+              <div>
+                <h3 className="font-semibold text-white">
+                  {dayPopup.date.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                </h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {dayPopup.packages.length} work package{dayPopup.packages.length !== 1 ? 's' : ''} active
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Grid/List toggle for popup */}
+                <div className="flex items-center bg-[#111] border border-gray-800 rounded-lg p-0.5">
+                  <button onClick={() => setPopupView('grid')}
+                    className={`p-1.5 rounded-md transition-all ${popupView === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                    <Grid className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => setPopupView('list')}
+                    className={`p-1.5 rounded-md transition-all ${popupView === 'list' ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                    <List className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <button onClick={() => setDayPopup(null)}
+                  className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Popup Body */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {dayPopup.packages.length === 0 ? (
+                <div className="text-center py-8">
+                  <Calendar className="w-10 h-10 text-gray-700 mx-auto mb-3" />
+                  <p className="text-gray-500 text-sm">No work packages on this day</p>
+                </div>
+              ) : popupView === 'grid' ? (
+                /* Grid View */
+                <div className="grid grid-cols-2 gap-3">
+                  {dayPopup.packages.map(wp => (
+                    <div key={wp.id}
+                      onClick={() => { onWorkPackageClick(wp); setDayPopup(null); }}
+                      className="bg-[#111] border border-gray-800 rounded-xl p-3 cursor-pointer hover:border-gray-700 hover:bg-[#161616] transition-all">
+                      {/* Priority dot */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${priorityColor((wp as any).priority || '')}`} />
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${statusColor((wp as any).status || '')}`}>
+                          {(wp as any).status || 'New'}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-medium text-white line-clamp-2 mb-2">{wp.subject}</h4>
+                      {/* Progress */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[10px] text-gray-500">
+                          <span>Progress</span>
+                          <span>{(wp as any).percentageDone || 0}%</span>
+                        </div>
+                        <div className="w-full bg-gray-800 rounded-full h-1">
+                          <div className="bg-blue-500 h-1 rounded-full" style={{ width: `${(wp as any).percentageDone || 0}%` }} />
+                        </div>
+                      </div>
+                      {/* Due date */}
+                      {(wp.due_date || (wp as any).dueDate) && (
+                        <div className="flex items-center gap-1 mt-2 text-[10px] text-gray-500">
+                          <Clock className="w-3 h-3" />
+                          <span>Due {new Date((wp.due_date || (wp as any).dueDate) as any).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* List View */
+                <div className="space-y-2">
+                  {dayPopup.packages.map(wp => (
+                    <div key={wp.id}
+                      onClick={() => { onWorkPackageClick(wp); setDayPopup(null); }}
+                      className="bg-[#111] border border-gray-800 rounded-xl p-3 cursor-pointer hover:border-gray-700 hover:bg-[#161616] transition-all flex items-center gap-3">
+                      {/* Priority dot */}
+                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${priorityColor((wp as any).priority || '')}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <h4 className="text-sm font-medium text-white truncate">{wp.subject}</h4>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded border shrink-0 ${statusColor((wp as any).status || '')}`}>
+                            {(wp as any).status || 'New'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                          {(wp.due_date || (wp as any).dueDate) && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {new Date((wp.due_date || (wp as any).dueDate) as any).toLocaleDateString('en-GB', { day:'2-digit', month:'short' })}
+                            </span>
+                          )}
+                          <span>{(wp as any).percentageDone || 0}% done</span>
+                        </div>
+                      </div>
+                      {/* Mini progress */}
+                      <div className="w-16 shrink-0">
+                        <div className="w-full bg-gray-800 rounded-full h-1">
+                          <div className="bg-blue-500 h-1 rounded-full" style={{ width: `${(wp as any).percentageDone || 0}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-
-        <div className="flex rounded-lg shadow-sm border border-surface-light overflow-hidden bg-surface-light/50">
-          <button
-            onClick={() => setViewType('day')}
-            className={`px-4 py-1.5 text-sm font-medium transition-colors ${viewType === 'day'
-              ? 'bg-primary-500 text-white shadow-sm'
-              : 'text-secondary hover:text-white hover:bg-surface-light'
-              }`}
-          >
-            Day
-          </button>
-          <button
-            onClick={() => setViewType('week')}
-            className={`px-4 py-1.5 text-sm font-medium border-x border-surface-light transition-colors ${viewType === 'week'
-              ? 'bg-primary-500 text-white shadow-sm'
-              : 'text-secondary hover:text-white hover:bg-surface-light'
-              }`}
-          >
-            Week
-          </button>
-          <button
-            onClick={() => setViewType('month')}
-            className={`px-4 py-1.5 text-sm font-medium transition-colors ${viewType === 'month'
-              ? 'bg-primary-500 text-white shadow-sm'
-              : 'text-secondary hover:text-white hover:bg-surface-light'
-              }`}
-          >
-            Month
-          </button>
-        </div>
-      </div>
-
-      {viewType === 'day' && renderDayView()}
-      {viewType === 'week' && renderWeekView()}
-      {viewType === 'month' && renderMonthView()}
+      )}
     </div>
   );
 };
