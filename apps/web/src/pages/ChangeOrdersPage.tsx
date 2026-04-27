@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { changeOrderService } from '../services/changeOrderService';
 import { queryKeys } from '../lib/queryClient';
 import { useProjectRoom } from '../hooks/useRealtimeSync';
+import { useProjectContext } from '../hooks/useProjectContext';
+import { ProjectPicker } from '../components/ProjectPicker';
 import ChangeOrderFormModal from '../components/ChangeOrderFormModal';
 import { InteractiveCard } from '../components/InteractiveCard';
 import { toast } from '../utils/toast';
@@ -15,12 +17,11 @@ import {
 
 function ChangeOrdersPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const { projectId, projects, isLoading: projectsLoading, setProjectId } = useProjectContext();
   const queryClient = useQueryClient();
-  const projectId = searchParams.get('project_id') || '';
 
   // Join real-time room for this project
-  useProjectRoom(projectId);
+  useProjectRoom(projectId || '');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -406,7 +407,6 @@ function ChangeOrdersPage() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleCreateChangeOrder}
         projectId={projectId || undefined}
-        contractId={searchParams.get('contract_id') || undefined}
       />
     </div>
   );
