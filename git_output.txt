@@ -5,3 +5,15 @@
 
 
 === GIT COMMIT ===
+M  apps/api/src/routes/ai.routes.ts
+M  apps/api/src/services/AIService.ts
+M  apps/web/src/components/ai/AIBrain.tsx
+A  apps/web/src/services/aiService.ts
+M  commit.sh
+M  git_output.txt
+[main 36c4526] feat: Groq AI (ARIA) - full construction assistant integration
+ 6 files changed, 529 insertions(+), 312 deletions(-)
+ create mode 100644 apps/web/src/services/aiService.ts
+To https://github.com/FORYT0/PROTECHTBIM.git
+   303b36e..36c4526  main -> main
+DONE - check git_output.txt
