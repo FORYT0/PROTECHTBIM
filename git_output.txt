@@ -1,29 +1,7 @@
-=== WAITING FOR NEW DEPLOY (uptime reset) ===
-  Attempt 1: uptime=313.330286241s
-  Attempt 2: uptime=4.075555572s
-  Attempt 3: uptime=25.421462863s
-  Attempt 4: uptime=47.038281586s
-  Attempt 5: uptime=68.458741438s
-  Attempt 6: uptime=89.875481841s
-  Attempt 7: uptime=111.541973453s
-  Attempt 8: uptime=133.004632791s
-  Attempt 9: uptime=154.413788812s
-  Attempt 10: uptime=176.010518926s
-  Attempt 11: uptime=197.361484922s
-  Attempt 12: uptime=218.763397692s
-  Attempt 13: uptime=240.374987487s
-  Attempt 14: uptime=261.767661267s
-  Attempt 15: uptime=283.177472253s
+=== REBUILD API BUNDLE ===
 
-=== CREATE TESTS (with auth) ===
-wp_id: 5012dc38-b256-41a8-997f-263aa3f2bdb9
-FAIL CREATE SNAG: HTTP 401
-  Error: {"error": "Authentication required to create snag"}
-FAIL CREATE DAILY REPORT: HTTP 401
-  Error: {"error": "Authentication required to create daily report"}
-FAIL CREATE CHANGE ORDER: HTTP 401
-  Error: {"error": "Authentication required"}
-OK CREATE TIME ENTRY: HTTP 201
-  Created ID: 916ad9a2...
-FAIL CREATE CONTRACT: HTTP 401
-  Error: {"error": "Authentication required"}
+✅ Bundle complete → C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js (652 KB)
+🚀 Start: node apps\api\dist-bundle\main.js
+
+
+=== GIT COMMIT ===
