@@ -26,7 +26,7 @@ export const aiService = {
   async getStatus(): Promise<{ available: boolean; model: string; message: string }> {
     try {
       const r = await apiRequest('/ai/status');
-      if (!r.ok) return { available: false, model: '', message: 'AI unavailable' };
+      if (!r.ok) return { available: false, model: '', message: 'AI status check failed' };
       return r.json();
     } catch {
       return { available: false, model: '', message: 'AI unreachable' };
@@ -41,9 +41,13 @@ export const aiService = {
         projectContext,
       }),
     });
+
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
-      throw new Error(err.error || 'AI chat failed');
+      // Friendly error messages
+      if (r.status === 503) throw new Error('ARIA not configured. Add GROQ_API_KEY in Railway Variables.');
+      if (r.status === 401) throw new Error('Authentication required. Please log in again.');
+      throw new Error(err.error || `AI chat failed (${r.status})`);
     }
     return (await r.json()).response;
   },
@@ -53,7 +57,10 @@ export const aiService = {
       method: 'POST',
       body: JSON.stringify({ scenario, projectContext }),
     });
-    if (!r.ok) throw new Error('Risk evaluation failed');
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.error || 'Risk evaluation failed');
+    }
     return r.json();
   },
 
