@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { ChangeOrderService } from '../services/ChangeOrderService';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { ChangeOrderReason, ChangeOrderPriority } from '../entities/ChangeOrder';
@@ -24,7 +24,7 @@ const changeOrderService = new ChangeOrderService();
 
 // ─── PUBLIC ROUTES ────────────────────────────────────────────────
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const changeOrders = await changeOrderService.getAllChangeOrders();
     res.json({ changeOrders });
@@ -33,7 +33,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', optionalAuth, async (req: Request, res: Response) => {
+router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user?.userId || req.body.submittedBy || req.body.userId;
     if (!userId) {
