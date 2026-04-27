@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { SnagService } from '../services/SnagService';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { SnagSeverity, SnagCategory, SnagStatus } from '../entities/Snag';
@@ -25,7 +25,7 @@ const snagService = new SnagService();
 // ─── PUBLIC ROUTES (no auth) ─────────────────────────────────────
 
 // Get all snags
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response): Promise<void> => {
   try {
     const snags = await snagService.getAllSnags();
     res.json({ snags });
@@ -35,22 +35,25 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Create snag
-router.post('/', optionalAuth, async (req: Request, res: Response) => {
+router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void> => {
   try {
-    // Get userId from JWT token (preferred) or request body
     const userId = (req as any).user?.userId || req.body.createdBy || req.body.userId;
     if (!userId) {
-      return res.status(401).json({ error: 'Authentication required to create snag' });
+      res.status(401).json({ error: 'Authentication required to create snag' });
+      return;
     }
     const snag = await snagService.createSnag(
       {
         projectId: req.body.projectId,
-        workPackageId: req.body.workPackageId,
+        workPackageId: req.body.workPackageId || undefined,
         location: req.body.location,
         description: req.body.description,
         severity: req.body.severity as SnagSeverity,
         category: req.body.category as SnagCategory,
-        assignedTo: req.body.assignedTo,
+        // Only pass assignedTo if it looks like a UUID (36 chars with dashes)
+        assignedTo: req.body.assignedTo && /^[0-9a-f-]{36}$/i.test(req.body.assignedTo)
+          ? req.body.assignedTo
+          : undefined,
         dueDate: req.body.dueDate ? new Date(req.body.dueDate) : undefined,
         costImpact: req.body.costImpact ? parseFloat(req.body.costImpact) : undefined,
         photoUrls: req.body.photoUrls,

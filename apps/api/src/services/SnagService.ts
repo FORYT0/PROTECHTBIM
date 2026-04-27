@@ -45,7 +45,6 @@ export class SnagService {
 
   async getAllSnags(): Promise<Snag[]> {
     return await this.snagRepository.find({
-      relations: ['project', 'workPackage', 'creator', 'assignee'],
       order: { createdAt: 'DESC' },
     });
   }

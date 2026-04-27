@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { DailyReportService } from '../services/DailyReportService';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { DelayType, ResponsibleParty } from '../entities/DelayEvent';
@@ -33,11 +33,12 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', optionalAuth, async (req: Request, res: Response) => {
+router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = (req as any).user?.userId || req.body.createdBy || req.body.userId;
     if (!userId) {
-      return res.status(401).json({ error: 'Authentication required to create daily report' });
+      res.status(401).json({ error: 'Authentication required to create daily report' });
+      return;
     }
     const dailyReport = await dailyReportService.createDailyReport(
       {

@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { ContractService } from '../services/ContractService';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { ContractType, ContractStatus } from '../entities/Contract';
@@ -36,12 +36,13 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // Create contract (no auth required for testing)
-router.post('/', optionalAuth, async (req: Request, res: Response) => {
+router.post('/', optionalAuth, async (req: Request, res: Response): Promise<void> => {
   try {
     // Use a default user ID for testing if not authenticated
     const userId = (req as any).user?.userId || req.body.createdBy;
     if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
+      res.status(401).json({ error: 'Authentication required' });
+      return;
     }
 
     console.log('📝 Creating contract:', req.body);
