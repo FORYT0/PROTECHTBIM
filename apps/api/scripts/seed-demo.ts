@@ -1,4 +1,4 @@
-/**
+﻿/**
  * PROTECHT BIM - Demo Seed Script
  * Nairobi Heights Mixed-Use Tower demo project
  */
@@ -23,13 +23,13 @@ const addDays = (d: Date, n: number) => {
 };
 
 async function seed() {
-  console.log('🔌 Connecting to database…');
+  console.log('ðŸ”Œ Connecting to databaseâ€¦');
   await AppDataSource.initialize();
-  console.log('✅ Connected!\n');
+  console.log('âœ… Connected!\n');
   const em = AppDataSource.manager;
 
-  // ── 1. USERS ────────────────────────────────────────────────────
-  console.log('👤 Creating users…');
+  // â”€â”€ 1. USERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  console.log('ðŸ‘¤ Creating usersâ€¦');
   const hash = await bcrypt.hash('Demo1234!', 10);
   const upsert = async (email: string, name: string) => {
     let u = await em.findOne(User, { where: { email } });
@@ -44,8 +44,8 @@ async function seed() {
   const pm    = await upsert('pm@protecht.demo',    'James Mwangi');
   const eng   = await upsert('eng@protecht.demo',   'Aisha Otieno');
 
-  // ── 2. PROJECT ──────────────────────────────────────────────────
-  console.log('\nCreating project…');
+  // â”€â”€ 2. PROJECT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  console.log('\nCreating projectâ€¦');
   let project = await em.findOne(Project, { where: { name: 'Nairobi Heights Mixed-Use Tower' } });
   if (!project) {
     project = em.create(Project, {
@@ -59,8 +59,8 @@ async function seed() {
   } else { console.log('   exists'); }
   const pid = project.id;
 
-  // ── 3. WORK PACKAGES ────────────────────────────────────────────
-  console.log('\nCreating work packages…');
+  // â”€â”€ 3. WORK PACKAGES â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  console.log('\nCreating work packagesâ€¦');
   const base = new Date('2024-01-15');
   const phases = [
     { subject: 'Site Preparation & Earthworks',  pct: 100, status: 'closed',       off: 0,   dur: 30  },
@@ -91,8 +91,8 @@ async function seed() {
   }
   console.log('   ' + wps.length + ' work packages');
 
-  // ── 4. CONTRACT ─────────────────────────────────────────────────
-  console.log('\nCreating contract…');
+  // â”€â”€ 4. CONTRACT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  console.log('\nCreating contractâ€¦');
   let contract = await em.findOne(Contract, { where: { projectId: pid } });
   if (!contract) {
     contract = em.create(Contract, {
@@ -112,8 +112,8 @@ async function seed() {
     console.log('   created: ' + contract.contractNumber);
   } else { console.log('   exists'); }
 
-  // ── 5. CHANGE ORDERS ────────────────────────────────────────────
-  console.log('\nCreating change orders…');
+  // â”€â”€ 5. CHANGE ORDERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  console.log('\nCreating change ordersâ€¦');
   const coData = [
     { num: 'CO-001', title: 'Tower Core Redesign - Extra Shear Walls',
       desc: 'Additional shear walls per updated wind load (KBC 2023). 280m3 concrete, 45T rebar.',
@@ -138,8 +138,8 @@ async function seed() {
   }
   console.log('   3 change orders');
 
-  // ── 6. DAILY REPORTS ────────────────────────────────────────────
-  console.log('\nCreating daily reports…');
+  // â”€â”€ 6. DAILY REPORTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  console.log('\nCreating daily reportsâ€¦');
   const drCount = await em.count(DailyReport, { where: { projectId: pid } });
   if (drCount === 0) {
     const rpts = [
@@ -164,8 +164,8 @@ async function seed() {
     console.log('   7 daily reports');
   } else { console.log('   already seeded'); }
 
-  // ── 7. SNAGS ────────────────────────────────────────────────────
-  console.log('\nCreating snags…');
+  // â”€â”€ 7. SNAGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  console.log('\nCreating snagsâ€¦');
   const snagCount = await em.count(Snag, { where: { projectId: pid } });
   if (snagCount === 0) {
     const snags = [
@@ -188,8 +188,8 @@ async function seed() {
     console.log('   6 snags');
   } else { console.log('   already seeded'); }
 
-  // ── 8. SPRINT ───────────────────────────────────────────────────
-  console.log('\nCreating sprint…');
+  // â”€â”€ 8. SPRINT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  console.log('\nCreating sprintâ€¦');
   const sc = await em.count(Sprint, { where: { projectId: pid } });
   if (sc === 0) {
     await em.save(em.create(Sprint, {
@@ -200,6 +200,33 @@ async function seed() {
     console.log('   sprint created');
   } else { console.log('   already seeded'); }
 
+  // ── 9. TIME ENTRIES ──────────────────────────────────────────
+  console.log('\nCreating time entries...');
+  const teCount = await em.count(TimeEntry, { where: { userId: admin.id } });
+  if (teCount === 0) {
+    const users = [admin, pm, eng];
+    const activWPs = wps.filter((w: any) => ['closed', 'in_progress'].includes(w.status));
+    let teCreated = 0;
+    for (let dayOffset = 0; dayOffset < 30; dayOffset++) {
+      const d = addDays(new Date('2025-12-01'), dayOffset);
+      if (d.getDay() === 0 || d.getDay() === 6) continue;
+      for (const user of users) {
+        for (let j = 0; j < 2; j++) {
+          const wp = activWPs[(dayOffset + j) % activWPs.length];
+          await em.save(em.create(TimeEntry, {
+            workPackageId: wp.id,
+            userId: user.id,
+            hours: 4 + (j % 4),
+            date: d,
+            comment: user.name.split(' ')[0] + ': site works progress',
+            billable: j % 3 !== 0,
+          } as any));
+          teCreated++;
+        }
+      }
+    }
+    console.log('   ' + teCreated + ' time entries');
+  } else { console.log('   already seeded (' + teCount + ')'); }
   console.log('\n' + '='.repeat(50));
   console.log('SEED COMPLETE!');
   console.log('  Login: admin@protecht.demo / Demo1234!');
@@ -215,5 +242,6 @@ seed().catch(err => {
   console.error('Seed failed:', err.message || err);
   process.exit(1);
 });
+
 
 

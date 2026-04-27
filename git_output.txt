@@ -1,40 +1,39 @@
-=== REBUILD API + SEED BUNDLES ===
-✅ Bundle complete → C:\Users\User\AndroidStudioProjects\PROTECHT BIM\apps\api\dist-bundle\main.js (653 KB)
-🚀 Start: node apps\api\dist-bundle\main.js
-
-✅ Seed bundle: dist-bundle/seed.js (102 KB)
+=== REBUILD SEED ===
 🌱 Run: node apps/api/dist-bundle/seed.js
 
 
-=== RUN SEED (adds time entries) ===
-🔌 Connecting to database…
-✅ Connected!
+=== RUN SEED ===
+ðŸ”Œ Connecting to databaseâ€¦
+âœ… Connected!
 
-👤 Creating users…
+ðŸ‘¤ Creating usersâ€¦
    exists:  Sarah Kamau
    exists:  James Mwangi
    exists:  Aisha Otieno
 
-Creating project…
+Creating projectâ€¦
    exists
 
-Creating work packages…
+Creating work packagesâ€¦
    10 work packages
 
-Creating contract…
+Creating contractâ€¦
    exists
 
-Creating change orders…
+Creating change ordersâ€¦
    3 change orders
 
-Creating daily reports…
+Creating daily reportsâ€¦
    already seeded
 
-Creating snags…
+Creating snagsâ€¦
    already seeded
 
-Creating sprint…
+Creating sprintâ€¦
    already seeded
+
+Creating time entries...
+   already seeded (4)
 
 ==================================================
 SEED COMPLETE!
@@ -44,4 +43,4 @@ SEED COMPLETE!
 ==================================================
 
 
-=== COMMIT ALL FIXES ===
+=== COMMIT + PUSH ===
