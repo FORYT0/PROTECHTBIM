@@ -297,7 +297,7 @@ function ProjectDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#000000] space-y-6 pb-8">
+    <div className="space-y-5 pb-8 min-w-0">
       {/* EXECUTIVE HEADER */}
       <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
         <div className="flex items-start justify-between">
