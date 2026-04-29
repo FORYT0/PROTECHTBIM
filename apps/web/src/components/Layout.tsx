@@ -271,51 +271,120 @@ function Layout() {
           </button>
         </aside>
 
-        {/* ── MOBILE DRAWER ──────────────────────────────── */}
+        {/* ── MOBILE DRAWER — same vertical line + icon/label as desktop ── */}
         {isMobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-40 top-14">
+            {/* Backdrop — tap to close */}
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-            <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#0A0A0A] border-r border-gray-800 overflow-y-auto">
-              <div className="px-3 py-3">
-                <button
-                  onClick={() => { setIsMobileMenuOpen(false); window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 bg-[#111] border border-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors">
-                  <Search className="w-4 h-4" />
-                  <span className="text-sm flex-1 text-left">Search…</span>
-                  <kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-[10px]">⌘K</kbd>
-                </button>
-              </div>
-              <nav className="px-2 pb-4 space-y-0.5">
+
+            {/* Drawer panel — same 100px width as desktop sidebar */}
+            <div
+              className="absolute left-0 top-0 bottom-0 flex flex-col"
+              style={{ width: '100px', background: '#0A0A0A', borderRight: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              {/* THE GLOWING VERTICAL LINE — identical to desktop
+                  Centred at x=50px (half of 100px drawer width) */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '50px',
+                  transform: 'translateX(-0.5px)',
+                  top: 0,
+                  bottom: 0,
+                  width: '1px',
+                  background: 'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.05) 5%, rgba(255,255,255,0.25) 12%, rgba(255,255,255,0.25) 88%, rgba(255,255,255,0.05) 95%, transparent 100%)',
+                  boxShadow: '0 0 8px 2px rgba(255,255,255,0.10)',
+                  pointerEvents: 'none',
+                  zIndex: 1,
+                }}
+              />
+
+              {/* Nav items — vertically stacked, icon + label centred */}
+              <nav
+                className="flex-1 flex flex-col pt-3 pb-2"
+                style={{ overflowY: 'auto', scrollbarWidth: 'none', position: 'relative', zIndex: 2 }}
+              >
                 {navItems.map(([href, label, icon]) => {
                   const activePath = href.split('?')[0];
                   const active = isActive(activePath);
                   return (
-                    <Link key={activePath} to={href} onClick={() => setIsMobileMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all"
-                      style={{
-                        color: active ? '#ffffff' : 'rgba(156,163,175,1)',
-                        background: active ? 'linear-gradient(135deg, rgba(37,99,235,0.25), rgba(37,99,235,0.08))' : 'transparent',
-                        border: active ? '1px solid rgba(59,130,246,0.2)' : '1px solid transparent',
-                      }}>
-                      <span style={{ color: active ? '#93c5fd' : 'currentColor', filter: active ? 'drop-shadow(0 0 5px rgba(96,165,250,0.8))' : 'none' }}>{icon}</span>
-                      <span className="text-sm font-medium" style={{ textShadow: active ? '0 0 10px rgba(255,255,255,0.5)' : 'none' }}>{label}</span>
+                    <Link
+                      key={activePath}
+                      to={href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="relative flex flex-col items-center justify-center gap-[5px] py-[10px] transition-all duration-150 group"
+                      style={{ color: active ? '#ffffff' : 'rgba(107,114,128,1)' }}
+                      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.color = '#d1d5db'; }}
+                      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.color = 'rgba(107,114,128,1)'; }}
+                    >
+                      {/* Bright notch on the centre line — active item only */}
+                      {active && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: '50px',
+                            transform: 'translateX(-50%)',
+                            top: '50%',
+                            marginTop: '-18px',
+                            width: '1px',
+                            height: '36px',
+                            background: 'linear-gradient(to bottom, transparent, #ffffff, transparent)',
+                            boxShadow: '0 0 6px 3px rgba(255,255,255,0.55), 0 0 14px 5px rgba(96,165,250,0.40)',
+                            borderRadius: '1px',
+                            zIndex: 5,
+                            pointerEvents: 'none',
+                          }}
+                        />
+                      )}
+
+                      {/* Hover tint */}
+                      <div
+                        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none"
+                        style={{ background: 'rgba(255,255,255,0.03)' }}
+                      />
+
+                      {/* Icon */}
+                      <span
+                        className="relative shrink-0 transition-all duration-150"
+                        style={{
+                          zIndex: 3,
+                          color: active ? '#ffffff' : 'currentColor',
+                          filter: active
+                            ? 'drop-shadow(0 0 6px rgba(255,255,255,0.85)) drop-shadow(0 0 12px rgba(96,165,250,0.55))'
+                            : 'none',
+                        }}
+                      >
+                        {icon}
+                      </span>
+
+                      {/* Label */}
+                      <span
+                        className="relative text-[11px] font-medium leading-none transition-all duration-150"
+                        style={{
+                          zIndex: 3,
+                          textShadow: active
+                            ? '0 0 8px rgba(255,255,255,0.75), 0 0 18px rgba(96,165,250,0.50)'
+                            : 'none',
+                        }}
+                      >
+                        {label}
+                      </span>
                     </Link>
                   );
                 })}
               </nav>
-              {user && (
-                <div className="border-t border-gray-800 px-4 py-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-sm font-bold">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-sm text-white">{user.name}</span>
-                  </div>
-                  <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-[#111] rounded-lg">
-                    <LogOut className="w-4 h-4" />Logout
-                  </button>
-                </div>
-              )}
+
+              {/* Logout at bottom */}
+              <button
+                onClick={handleLogout}
+                className="shrink-0 flex flex-col items-center justify-center gap-[5px] py-[10px] mb-3 text-gray-600 hover:text-white transition-all"
+                style={{ position: 'relative', zIndex: 2 }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+              >
+                <LogOut className="w-[18px] h-[18px]" />
+                <span className="text-[11px] font-medium leading-none">Logout</span>
+              </button>
             </div>
           </div>
         )}
