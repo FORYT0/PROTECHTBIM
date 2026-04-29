@@ -1,117 +1,115 @@
-# PROTECHT BIM — Deployment Guide
+# PROTECHT BIM — Backend Migration: Railway → Render + Neon
 
-## Architecture
-Single Railway service serves both the API and the built React frontend.
-- Build: `npm run build` (compiles API + bundles frontend)
-- Start: `node apps/api/dist/main.js` (API serves frontend as static files in production)
+## Overview
+Railway trial ended. Migration to 100% free open-source infrastructure:
+- **Database**: Neon.tech (free serverless Postgres — 0.5GB, no card required)
+- **API Host**: Render.com (free web service — sleeps after 15min inactivity)
+- **Frontend**: Vercel (unchanged — free hobby tier)
 
 ---
 
-## Step 1 — Verify build locally
+## Step 1 — Create Neon Database (5 minutes)
 
+1. Go to [neon.tech](https://neon.tech) → **Sign up free** (GitHub login works)
+2. Create a new project → name it `protecht-bim`
+3. On the dashboard, click **Connection string** → copy the `postgresql://...` URL
+4. It looks like: `postgresql://username:password@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require`
+5. **Save this URL** — you'll need it in Step 3
+
+---
+
+## Step 2 — Deploy API on Render (10 minutes)
+
+1. Go to [render.com](https://render.com) → **Sign up free** (GitHub login works)
+2. Click **New → Web Service**
+3. Connect your GitHub repo: `FORYT0/PROTECHTBIM`
+4. Configure:
+   - **Name**: `protechtbim-api`
+   - **Root Directory**: *(leave blank — uses repo root)*
+   - **Runtime**: `Node`
+   - **Build Command**: `npm install --include=dev && node apps/api/scripts/build-bundle.js`
+   - **Start Command**: `node apps/api/dist-bundle/main.js`
+   - **Plan**: Free
+5. Click **Advanced** → **Add Environment Variables**:
+
+| Key | Value |
+|-----|-------|
+| `NODE_ENV` | `production` |
+| `PORT` | `10000` |
+| `DATABASE_URL` | *(paste your Neon connection string)* |
+| `JWT_SECRET` | *(generate: openssl rand -hex 32)* |
+| `CORS_ORIGIN` | `https://protechtbim-web.vercel.app` |
+| `GROQ_API_KEY` | *(your Groq key from [console.groq.com](https://console.groq.com))* |
+
+6. Click **Create Web Service**
+7. Wait ~5 minutes for first build
+8. Your API URL will be: `https://protechtbim-api.onrender.com`
+
+> **Note on free tier**: Render spins down after 15 min of inactivity.
+> First request takes ~30s to wake. The app shows a "waking up" toast and retries automatically.
+
+---
+
+## Step 3 — Update Vercel Environment Variable
+
+1. Go to [vercel.com](https://vercel.com) → Your project → **Settings → Environment Variables**
+2. Find `VITE_API_URL` (or add it if missing)
+3. Set value to: `https://protechtbim-api.onrender.com/api/v1`
+4. Click **Save** → Go to **Deployments** → **Redeploy** (to pick up the new env var)
+
+---
+
+## Step 4 — Seed the Database
+
+Once your Render service is running, seed the demo data:
+
+**Option A — Render Shell** (easiest):
+1. Render dashboard → your service → **Shell**
+2. Run: `node apps/api/dist-bundle/seed.js`
+
+**Option B — Local** (with Neon URL):
 ```bash
-# From repo root
-npm run build
-# Should complete with no errors
-# API compiled to: apps/api/dist/main.js
-# Frontend bundled to: apps/web/dist/
+cd "C:\Users\User\AndroidStudioProjects\PROTECHT BIM"
+set DATABASE_URL=postgresql://your-neon-url-here
+node apps/api/dist-bundle/seed.js
 ```
 
 ---
 
-## Step 2 — Railway setup
+## Step 5 — Verify
 
-### 2a. Create project
-[railway.app](https://railway.app) → New Project → Deploy from GitHub → select your repo
+Visit your app: `https://protechtbim-web.vercel.app`
 
-Railway will use `railway.toml` at the repo root automatically.
-
-### 2b. Add PostgreSQL
-Railway project → **+ New** → Database → PostgreSQL
-
-### 2c. Add Redis
-Railway project → **+ New** → Database → Redis
-
-### 2d. Set environment variables
-Railway Service → Variables → add all of these:
-
-```
-NODE_ENV=production
-API_PORT=3000
-LOG_LEVEL=info
-
-# From PostgreSQL Connect tab:
-DATABASE_HOST=
-DATABASE_PORT=5432
-DATABASE_NAME=railway
-DATABASE_USER=postgres
-DATABASE_PASSWORD=
-
-# From Redis Connect tab:
-REDIS_HOST=
-REDIS_PORT=6379
-REDIS_PASSWORD=
-
-# Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-JWT_SECRET=
-JWT_EXPIRES_IN=3600
-JWT_REFRESH_EXPIRES_IN=604800
-
-# Generate a DIFFERENT value from JWT_SECRET:
-SESSION_SECRET=
-SESSION_TTL=86400
-
-# Leave blank — frontend is same-origin, no CORS needed
-CORS_ORIGIN=
-
-MAX_FILE_SIZE=104857600
-ALLOWED_FILE_TYPES=.ifc,.rvt,.nwd,.pdf,.png,.jpg,.jpeg,.dwg
-```
-
-### 2e. Deploy
-Railway auto-deploys on push. Watch build logs — should end with:
-```
-Server is running on http://localhost:3000
-```
-
-### 2f. Run migrations (after first successful deploy)
-Railway Service → Settings → Deploy → **One-off command**:
-```
-node apps/api/dist/scripts/run-migrations.js
-```
+Login with:
+- `admin@protecht.demo` / `Demo1234!`
+- `pm@protecht.demo` / `Demo1234!`
+- `eng@protecht.demo` / `Demo1234!`
 
 ---
 
-## Step 3 — Verify
+## Free Tier Limits
 
-| Check | URL |
-|---|---|
-| API health | `https://your-app.up.railway.app/health` |
-| Frontend | `https://your-app.up.railway.app/` |
-| Login | `https://your-app.up.railway.app/login` |
-
-The frontend and API are on the same domain — no CORS configuration needed.
+| Service | Limit | Notes |
+|---------|-------|-------|
+| Neon | 0.5GB storage, 190hrs compute/month | More than enough for dev/demo |
+| Render | 750hrs/month, sleeps after 15min | App wakes on first request |
+| Vercel | 100GB bandwidth, unlimited deploys | No limits for this project size |
 
 ---
 
-## Troubleshooting
+## Alternative Free Options
 
-**Build fails**
-- Check Railway build logs
-- Run `npm run build` locally first to catch errors
+If Render is too slow (cold-starts), alternatives:
+- **Fly.io** — 3 free shared VMs, doesn't sleep: `fly launch`
+- **Koyeb** — 2 free services, no sleep
+- **Cyclic.sh** — free Node hosting
+- **Supabase** — free Postgres if you prefer over Neon (also has auth/storage)
 
-**`Cannot find module` errors at runtime**
-- Ensure `npm install` ran during build (it's in the build command)
-- Check that `apps/api/dist/main.js` exists after build
+---
 
-**Database connection error**
-- Confirm `DATABASE_*` vars match PostgreSQL Connect tab exactly
-- SSL is already configured for Railway in `data-source.ts`
+## Keep the API Warm (Optional)
 
-**Blank page / 404 on refresh**
-- The API serves `index.html` for all non-API routes in production
-- Verify `NODE_ENV=production` is set in Railway variables
-
-**Migrations not running**
-- Use the one-off command above after deploy
-- Check Railway logs for migration output
+To prevent Render cold-starts, use a free uptime monitor:
+- [UptimeRobot](https://uptimerobot.com) — free, pings your URL every 5min
+- Add monitor: `https://protechtbim-api.onrender.com/health`
+- This keeps the API warm 24/7 on the free tier
