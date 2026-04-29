@@ -322,3 +322,5 @@ export const WikiPageBoard: React.FC = () => {
         </div>
     );
 };
+
+export default WikiPageBoard;
