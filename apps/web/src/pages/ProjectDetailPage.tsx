@@ -150,30 +150,34 @@ function ProjectDetailPage() {
     retry: 1,
   });
 
-  // Mock data for demonstration - replace with real API calls
-  const mockKPIs = {
-    tasks: { total: 128, overdue: 14 },
-    budget: { total: 2100000, used: 1800000 },
-    rfis: 6,
-    issues: { total: 8, critical: 3 },
-    team: 12,
-    completion: 34
-  };
+    // ── Real data queries ────────────────────────────────────────────
+  const { data: realSnags = [] } = useQuery({
+    queryKey: ['proj-detail-snags', id],
+    queryFn: () => snagSvc.getSnagsByProject(id!),
+    enabled: !!id, staleTime: 60_000, retry: 1,
+  });
+  const { data: realCOs = [] } = useQuery({
+    queryKey: ['proj-detail-cos', id],
+    queryFn: () => coSvc.getChangeOrdersByProject(id!),
+    enabled: !!id, staleTime: 60_000, retry: 1,
+  });
+  const { data: realWPsResp } = useQuery({
+    queryKey: ['proj-detail-wps', id],
+    queryFn: () => wpSvc.listWorkPackages({ project_id: id!, per_page: 200 }),
+    enabled: !!id, staleTime: 60_000, retry: 1,
+  });
+  const realWPs: any[] = (realWPsResp as any)?.work_packages || [];
+  const now = new Date();
 
-  const mockFinancials = {
-    contractValue: 2500000,
-    approvedBudget: 2100000,
-    committedCost: 1650000,
-    actualCost: 1800000,
-    variance: -2.3
-  };
-
-  const mockBIM = {
-    version: 'v5.2',
-    lastSync: '1 day ago',
-    clashes: 12,
-    linkedSheets: 84,
-    health: 'Good'
+  // Computed KPIs from real data
+  const realKPIs = {
+    tasks: { total: realWPs.length, overdue: realWPs.filter((w: any) => { const d = w.due_date || w.dueDate; return d && new Date(d) < now && !['Done','Closed'].includes(w.status || ''); }).length },
+    openSnags: (realSnags as any[]).filter((s: any) => s.status === 'Open').length,
+    criticalSnags: (realSnags as any[]).filter((s: any) => s.severity === 'Critical').length,
+    pendingCOs: (realCOs as any[]).filter((c: any) => ['Submitted','Under Review'].includes(c.status)).length,
+    totalCOValue: (realCOs as any[]).reduce((s: number, c: any) => s + (Number(c.costImpact) || 0), 0),
+    completedWPs: realWPs.filter((w: any) => ['Done','Closed'].includes(w.status || '')).length,
+    completion: (project as any)?.progress || 0,
   };
 
   const loadProject = async () => {
@@ -353,7 +357,7 @@ function ProjectDetailPage() {
           <div className="flex items-start gap-6">
             {/* Progress Ring */}
             <div className="text-center">
-              <ProgressRing progress={mockKPIs.completion} />
+              <ProgressRing progress={realKPIs.completion} />
               <p className="text-xs text-gray-400 mt-2">Progress</p>
             </div>
 
@@ -372,7 +376,7 @@ function ProjectDetailPage() {
                   <DollarSign className="w-4 h-4 text-yellow-400" />
                   <span className="text-xs text-gray-400">Budget</span>
                 </div>
-                <p className="text-sm font-semibold text-yellow-400">{mockFinancials.variance}%</p>
+                <p className="text-sm font-semibold text-yellow-400">{realKPIs.pendingCOs > 0 ? `${realKPIs.pendingCOs} pending` : "On Budget"}</p>
               </div>
 
               <div className="bg-[#111111] rounded-lg p-3 border border-gray-800">
@@ -402,8 +406,8 @@ function ProjectDetailPage() {
           icon={Package}
           iconColor="text-blue-400"
           title="Total Tasks"
-          value={mockKPIs.tasks.total}
-          subtitle={`${mockKPIs.tasks.overdue} overdue`}
+          value={realKPIs.tasks.total}
+          subtitle={`${realKPIs.tasks.overdue} overdue`}
           trend={{ value: "+12%", direction: "up", color: "text-green-400" }}
           to="/work-packages"
         />
@@ -424,7 +428,7 @@ function ProjectDetailPage() {
           icon={FileText}
           iconColor="text-purple-400"
           title="Open RFIs"
-          value={mockKPIs.rfis}
+          value={realKPIs.pendingCOs}
           subtitle="Awaiting response"
           to="/issues?type=rfi"
         />
@@ -434,9 +438,9 @@ function ProjectDetailPage() {
           icon={AlertTriangle}
           iconColor="text-red-400"
           title="Active Issues"
-          value={mockKPIs.issues.total}
+          value={realKPIs.openSnags}
           subtitle="Needs attention"
-          badge={{ text: `${mockKPIs.issues.critical} critical`, color: "text-red-400" }}
+          badge={{ text: `${realKPIs.criticalSnags} critical`, color: "text-red-400" }}
           to="/issues"
         />
 
@@ -445,7 +449,7 @@ function ProjectDetailPage() {
           icon={Users}
           iconColor="text-cyan-400"
           title="Team Members"
-          value={mockKPIs.team}
+          value={realWPs.length}
           subtitle="Active contributors"
           badge={{ text: "8 online", color: "text-green-400" }}
           to="/resources"
@@ -470,7 +474,7 @@ function ProjectDetailPage() {
           icon={FileText}
           iconColor="text-blue-400"
           title="Contract Value"
-          value={formatCurrency(mockFinancials.contractValue)}
+          value={formatCurrency((dashboard?.financial_summary?.contract_value || 0))}
           subtitle="Revised value"
           badge={{ text: "+$400K", color: "text-green-400" }}
           to="/contracts"
@@ -481,7 +485,7 @@ function ProjectDetailPage() {
           icon={TrendingUp}
           iconColor="text-yellow-400"
           title="Variations"
-          value={formatCurrency(mockFinancials.approvedBudget - mockFinancials.contractValue + 400000)}
+          value={formatCurrency((dashboard?.financial_summary?.approved_budget || 0) - (dashboard?.financial_summary?.contract_value || 0) + 400000)}
           subtitle="Approved changes"
           to="/change-orders"
         />
@@ -742,25 +746,25 @@ function ProjectDetailPage() {
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm text-gray-400">Contract Value</span>
-                  <span className="text-sm font-semibold text-white">{formatCurrency(mockFinancials.contractValue)}</span>
+                  <span className="text-sm font-semibold text-white">{formatCurrency((dashboard?.financial_summary?.contract_value || 0))}</span>
                 </div>
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm text-gray-400">Approved Budget</span>
-                  <span className="text-sm font-semibold text-white">{formatCurrency(mockFinancials.approvedBudget)}</span>
+                  <span className="text-sm font-semibold text-white">{formatCurrency((dashboard?.financial_summary?.approved_budget || 0))}</span>
                 </div>
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm text-gray-400">Committed Cost</span>
-                  <span className="text-sm font-semibold text-blue-400">{formatCurrency(mockFinancials.committedCost)}</span>
+                  <span className="text-sm font-semibold text-blue-400">{formatCurrency((dashboard?.financial_summary?.committed_cost || 0))}</span>
                 </div>
               </div>
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-sm text-gray-400">Actual Cost</span>
-                  <span className="text-sm font-semibold text-yellow-400">{formatCurrency(mockFinancials.actualCost)}</span>
+                  <span className="text-sm font-semibold text-yellow-400">{formatCurrency((dashboard?.financial_summary?.actual_cost || 0))}</span>
                 </div>
               </div>
               <div className="pt-3 border-t border-gray-800">
@@ -847,7 +851,7 @@ function ProjectDetailPage() {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-300">Latest Model</span>
-                <span className="text-sm font-semibold text-blue-400">{mockBIM.version}</span>
+                <span className="text-sm font-semibold text-blue-400">{"v5.2"}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-300">Last Sync</span>
@@ -855,17 +859,17 @@ function ProjectDetailPage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-300">Clash Detections</span>
-                <span className="text-sm font-semibold text-orange-400">{mockBIM.clashes} open</span>
+                <span className="text-sm font-semibold text-orange-400">{0} open</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-300">Linked Sheets</span>
-                <span className="text-sm text-gray-400">{mockBIM.linkedSheets}</span>
+                <span className="text-sm text-gray-400">{realWPs.length}</span>
               </div>
               <div className="flex justify-between items-center pt-3 border-t border-blue-500/20">
                 <span className="text-sm font-medium text-gray-300">Model Health</span>
                 <span className="inline-flex items-center gap-1 text-sm font-semibold text-green-400">
                   <CheckCircle className="w-4 h-4" />
-                  {mockBIM.health}
+                  {"Good"}
                 </span>
               </div>
             </div>
