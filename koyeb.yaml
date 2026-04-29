@@ -1,0 +1,44 @@
+# PROTECHT BIM — Deploy on Koyeb (Free) + Neon Postgres (Free)
+# No credit card required for either service.
+
+# ══════════════════════════════════════════════════════════════
+# STACK (100% free, no card):
+#   API:      Koyeb — 1 free web service (512MB RAM, no sleep)
+#   Database: Neon.tech — free Postgres (3GB, serverless)
+#   Frontend: Vercel — free hobby tier (unchanged)
+# ══════════════════════════════════════════════════════════════
+
+app_name: protechtbim
+
+services:
+  - name: protechtbim-api
+    type: web
+    git:
+      repository: https://github.com/FORYT0/PROTECHTBIM
+      branch: main
+    build:
+      buildpack: nodejs
+      build_command: "npm install --include=dev && node apps/api/scripts/build-bundle.js"
+    run:
+      run_command: "node apps/api/dist-bundle/main.js"
+    ports:
+      - port: 3000
+        protocol: http
+    health_checks:
+      - path: /health
+        port: 3000
+        interval: 30
+    env:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      # Set these in Koyeb dashboard → Service → Environment:
+      - key: DATABASE_URL
+        secret: true    # paste your Neon connection string
+      - key: JWT_SECRET
+        secret: true    # generate: openssl rand -hex 32
+      - key: CORS_ORIGIN
+        value: https://protechtbim-web.vercel.app
+      - key: GROQ_API_KEY
+        secret: true    # your Groq key
