@@ -19,6 +19,7 @@ import {
   Layers, Target, Zap, TrendingUp, Clipboard, Download
 } from 'lucide-react';
 import { printProjectReport, downloadProjectReport } from '../utils/reportGenerator';
+import { ProjectHealthCard } from '../components/ProjectHealthCard';
 import { snagService as snagSvc } from '../services/snagService';
 import { changeOrderService as coSvc } from '../services/changeOrderService';
 import { dailyReportService as drSvc } from '../services/dailyReportService';
@@ -402,6 +403,17 @@ function ProjectDetailPage() {
       {/* KPI SUMMARY ROW */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Tasks */}
+      {/* PROJECT HEALTH SCORE */}
+      <ProjectHealthCard
+        progress={realKPIs.completion}
+        openSnags={realKPIs.openSnags}
+        criticalSnags={realKPIs.criticalSnags}
+        overdueWPs={realKPIs.tasks.overdue}
+        totalWPs={realKPIs.tasks.total}
+        pendingCOs={realKPIs.pendingCOs}
+        daysRemaining={project.end_date ? Math.ceil((new Date(project.end_date).getTime() - Date.now()) / 86400000) : undefined}
+        totalDays={project.start_date && project.end_date ? Math.ceil((new Date(project.end_date).getTime() - new Date(project.start_date).getTime()) / 86400000) : undefined}
+      />
         <InteractiveCard
           icon={Package}
           iconColor="text-blue-400"
