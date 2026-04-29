@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { NotificationBell } from './NotificationBell';
 import { notificationService } from '../services/NotificationService';
@@ -17,140 +17,12 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '../services/projectService';
 
-/* ── Pulsating hand-drawn SVG line ──────────────────────────────────────── */
-function GlowLine({ height }: { height: number }) {
-  // Generate a slightly wobbly path that looks hand-drawn
-  const cx = 22; // horizontal center of the 44px strip
-  const segments = 20;
-  const segH = height / segments;
-
-  let d = `M ${cx} 0 `;
-  for (let i = 0; i <= segments; i++) {
-    const y = i * segH;
-    // Small random-looking but deterministic wobble
-    const wobble = [0.8, -1.2, 1.5, -0.7, 1.1, -1.4, 0.9, -0.6, 1.3, -1.0,
-                    0.7, -1.3, 1.1, -0.8, 1.4, -1.1, 0.6, -1.2, 0.9, -0.7, 0.5];
-    const x = cx + (wobble[i % wobble.length] ?? 0);
-    if (i === 0) d += `L ${x} ${y} `;
-    else d += `L ${x} ${y} `;
-  }
-
-  return (
-    <svg
-      width="44" height={height}
-      viewBox={`0 0 44 ${height}`}
-      style={{
-        position: 'absolute', top: 0, left: 0,
-        pointerEvents: 'none', overflow: 'visible',
-      }}
-    >
-      <defs>
-        {/* Gradient to fade top and bottom */}
-        <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1" gradientUnits="objectBoundingBox">
-          <stop offset="0%"   stopColor="white" stopOpacity="0" />
-          <stop offset="6%"   stopColor="white" stopOpacity="0.15" />
-          <stop offset="12%"  stopColor="white" stopOpacity="0.55" />
-          <stop offset="88%"  stopColor="white" stopOpacity="0.55" />
-          <stop offset="94%"  stopColor="white" stopOpacity="0.15" />
-          <stop offset="100%" stopColor="white" stopOpacity="0" />
-        </linearGradient>
-
-        {/* Glow filter — gives the 3D alive feel */}
-        <filter id="glow" x="-300%" y="-10%" width="700%" height="120%">
-          <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-          <feMerge>
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-
-        {/* Clip to gradient so ends fade */}
-        <mask id="lineMask">
-          <rect x="0" y="0" width="44" height={height} fill="url(#lineGrad)" />
-        </mask>
-      </defs>
-
-      {/* Outer glow — wide, soft */}
-      <path d={d} fill="none"
-        stroke="rgba(255,255,255,0.12)"
-        strokeWidth="5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        mask="url(#lineMask)" />
-
-      {/* Mid glow */}
-      <path d={d} fill="none"
-        stroke="rgba(255,255,255,0.25)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        mask="url(#lineMask)"
-        filter="url(#glow)" />
-
-      {/* Core line — sharp, bright */}
-      <path d={d} fill="none"
-        stroke="rgba(255,255,255,0.75)"
-        strokeWidth="1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        mask="url(#lineMask)" />
-    </svg>
-  );
-}
-
-/* ── Active dot on the line ─────────────────────────────────────────────── */
-function ActiveDot({ top }: { top: number }) {
-  return (
-    <div style={{
-      position: 'absolute',
-      left: '22px',
-      top: `${top}px`,
-      transform: 'translate(-50%, -50%)',
-      pointerEvents: 'none',
-      zIndex: 20,
-    }}>
-      {/* Outermost halo — slow pulse */}
-      <div style={{
-        position: 'absolute',
-        width: '20px', height: '20px',
-        borderRadius: '50%',
-        background: 'rgba(255,255,255,0.08)',
-        top: '50%', left: '50%',
-        transform: 'translate(-50%,-50%)',
-        animation: 'dotHalo 2.4s ease-in-out infinite',
-      }} />
-      {/* Mid ring */}
-      <div style={{
-        position: 'absolute',
-        width: '10px', height: '10px',
-        borderRadius: '50%',
-        background: 'rgba(255,255,255,0.25)',
-        top: '50%', left: '50%',
-        transform: 'translate(-50%,-50%)',
-        animation: 'dotHalo 2.4s ease-in-out infinite 0.3s',
-      }} />
-      {/* Core bright dot */}
-      <div style={{
-        width: '5px', height: '5px',
-        borderRadius: '50%',
-        background: '#ffffff',
-        boxShadow: '0 0 6px 2px rgba(255,255,255,0.9), 0 0 14px 5px rgba(96,165,250,0.6)',
-        position: 'relative',
-      }} />
-    </div>
-  );
-}
-
 function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, tokens, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { toggleAIBrain } = useAIStore();
-  const navRef = useRef<HTMLElement>(null);
-  const [navHeight, setNavHeight] = useState(600);
-  const [activeY, setActiveY] = useState(0);
 
   const { data: projectsData } = useQuery({
     queryKey: ['projects-layout'],
@@ -159,24 +31,6 @@ function Layout() {
     enabled: !!tokens?.accessToken,
   });
   const pid = projectsData?.projects?.[0]?.id || '';
-
-  // Measure nav strip height and active item center for the dot
-  useEffect(() => {
-    const update = () => {
-      if (!navRef.current) return;
-      setNavHeight(navRef.current.offsetHeight);
-      const active = navRef.current.querySelector('[data-active="true"]') as HTMLElement | null;
-      if (active) {
-        const stripTop = navRef.current.getBoundingClientRect().top;
-        const itemTop = active.getBoundingClientRect().top;
-        const itemH = active.offsetHeight;
-        setActiveY(itemTop - stripTop + itemH / 2);
-      }
-    };
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, [location.pathname, navHeight]);
 
   useEffect(() => {
     let mounted = true;
@@ -230,27 +84,18 @@ function Layout() {
     ['/cost-tracking', 'Costs', <DollarSign className="w-[18px] h-[18px]" />],
     ['/resource-management', 'Resources', <Users className="w-[18px] h-[18px]" />],
     ['/activity', 'Activity', <Activity className="w-[18px] h-[18px]" />],
+    ...(pid ? [[`/projects/${pid}/bim`, 'BIM', <Box className="w-[18px] h-[18px]" />] as [string, string, React.ReactNode]] : []),
   ];
 
   return (
-    <div className="min-h-screen bg-black flex flex-col overflow-hidden">
-      {/* ── Keyframe styles ─────────────────────────────────── */}
-      <style>{`
-        @keyframes dotHalo {
-          0%, 100% { opacity: 0.6; transform: translate(-50%,-50%) scale(1); }
-          50%       { opacity: 0.15; transform: translate(-50%,-50%) scale(1.8); }
-        }
-        @keyframes linePulse {
-          0%, 100% { opacity: 0.85; }
-          50%       { opacity: 0.45; }
-        }
-        .nav-line-pulse { animation: linePulse 3.5s ease-in-out infinite; }
-      `}</style>
-
+    <div className="min-h-screen bg-black flex flex-col overflow-x-hidden">
       <GlobalSearch />
 
-      {/* ══ TOP BAR ═══════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════
+          TOP BAR — full width sticky, stays while page scrolls
+          ══════════════════════════════════════════════════════ */}
       <header className="bg-[#0A0A0A] border-b border-gray-800/60 sticky top-0 z-50 shrink-0 h-14 flex items-center px-3 sm:px-4 lg:px-5 justify-between">
+        {/* Logo left */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
             <Building2 className="w-4 h-4 text-white" />
@@ -260,7 +105,7 @@ function Layout() {
             <span className="text-[10px] text-gray-500 tracking-wider">Construction Intelligence Platform</span>
           </div>
         </Link>
-
+        {/* Right controls */}
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
@@ -274,17 +119,17 @@ function Layout() {
           <CurrencyToggle />
           <NotificationBell />
           {user && (
-            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#111] border border-gray-800">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-xs font-bold">
-                {user.name.charAt(0).toUpperCase()}
+            <>
+              <div className="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#111] border border-gray-800">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-xs font-bold">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <span className="text-xs font-medium text-white max-w-[90px] truncate">{user.name}</span>
               </div>
-              <span className="text-xs font-medium text-white max-w-[90px] truncate">{user.name}</span>
-            </div>
-          )}
-          {user && (
-            <button onClick={handleLogout} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#111] transition-all" title="Logout">
-              <LogOut className="w-4 h-4" />
-            </button>
+              <button onClick={handleLogout} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-[#111] transition-all" title="Logout">
+                <LogOut className="w-4 h-4" />
+              </button>
+            </>
           )}
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-white">
@@ -293,25 +138,55 @@ function Layout() {
         </div>
       </header>
 
-      {/* ══ BODY ═══════════════════════════════════════════════ */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      {/* ══════════════════════════════════════════════════════
+          BODY: fixed sidebar + scrollable content
+          ══════════════════════════════════════════════════════ */}
+      <div className="flex flex-1 min-h-0 relative">
 
-        {/* ── VERTICAL NAV STRIP — fixed, does NOT scroll ───── */}
+        {/* ══════════════════════════════════════════════════
+            VERTICAL NAV STRIP — FIXED, never scrolls
+            Width: 100px
+            The glowing line runs through the MIDDLE of the
+            icon+label items (centred horizontally at x=50px)
+            Active page gets a bright notch on that centre line
+            ════════════════════════════════════════════════ */}
         <aside
-          ref={navRef}
-          className="hidden lg:flex flex-col shrink-0 relative overflow-hidden"
-          style={{ width: '88px', position: 'sticky', top: '56px', height: 'calc(100vh - 56px)', alignSelf: 'flex-start' }}
+          className="hidden lg:flex flex-col"
+          style={{
+            /* Fixed to viewport so it stays put when content scrolls */
+            position: 'fixed',
+            top: '56px',          /* below the 14-unit (56px) top bar */
+            left: 0,
+            bottom: 0,
+            width: '100px',
+            zIndex: 40,
+            background: '#0A0A0A',
+          }}
         >
-          {/* THE PULSATING HAND-DRAWN GLOWING LINE — through icon centres */}
-          <div className="nav-line-pulse" style={{ position: 'absolute', top: 0, left: 0, width: '44px', height: navHeight, pointerEvents: 'none', zIndex: 1 }}>
-            <GlowLine height={navHeight} />
-          </div>
+          {/* ── THE GLOWING VERTICAL LINE ──
+              Centred horizontally in the 100px strip (x = 50px).
+              Runs from top to bottom with gradient fade at ends.
+              This line sits BEHIND the nav items via z-index. */}
+          <div
+            style={{
+              position: 'absolute',
+              left: '50px',           /* horizontal centre of the 100px strip */
+              top: 0,
+              bottom: 0,
+              width: '1px',
+              transform: 'translateX(-0.5px)', /* perfect pixel alignment */
+              background: 'linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.05) 5%, rgba(255,255,255,0.25) 12%, rgba(255,255,255,0.25) 88%, rgba(255,255,255,0.05) 95%, transparent 100%)',
+              boxShadow: '0 0 8px 2px rgba(255,255,255,0.10)',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
 
-          {/* Active dot on the line */}
-          {activeY > 0 && <ActiveDot top={activeY} />}
-
-          {/* Nav items — do NOT scroll; they sit on top of the line */}
-          <nav className="flex-1 flex flex-col pt-3" style={{ overflowY: 'hidden' }}>
+          {/* ── NAV ITEMS scroll area (the line stays behind via z) */}
+          <nav
+            className="flex-1 flex flex-col pt-3 pb-2"
+            style={{ overflowY: 'auto', scrollbarWidth: 'none', position: 'relative', zIndex: 2 }}
+          >
             {navItems.map(([href, label, icon]) => {
               const activePath = href.split('?')[0];
               const active = isActive(activePath);
@@ -319,94 +194,94 @@ function Layout() {
                 <Link
                   key={activePath}
                   to={href}
-                  data-active={active ? 'true' : undefined}
-                  className="relative flex flex-col items-center justify-center gap-[3px] py-[11px] transition-all duration-150 group z-10"
-                  style={{
-                    color: active ? '#ffffff' : 'rgba(100,110,120,1)',
-                    textDecoration: 'none',
-                  }}
+                  className="relative flex flex-col items-center justify-center gap-[5px] py-[10px] transition-all duration-150 group"
+                  style={{ color: active ? '#ffffff' : 'rgba(107,114,128,1)' }}
                   onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.color = '#d1d5db'; }}
-                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.color = 'rgba(100,110,120,1)'; }}
+                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.color = 'rgba(107,114,128,1)'; }}
                 >
-                  {/* Icon — sits ON the line */}
+                  {/* Active: BRIGHT glowing notch ON the centre line */}
+                  {active && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        /* x = 50px (centre) minus half the width */
+                        left: '50px',
+                        transform: 'translateX(-50%)',
+                        top: '50%',
+                        marginTop: '-18px',
+                        width: '1px',
+                        height: '36px',
+                        background: 'linear-gradient(to bottom, transparent, #ffffff, transparent)',
+                        boxShadow: '0 0 6px 3px rgba(255,255,255,0.55), 0 0 14px 5px rgba(96,165,250,0.40)',
+                        borderRadius: '1px',
+                        zIndex: 5,
+                        pointerEvents: 'none',
+                      }}
+                    />
+                  )}
+
+                  {/* Hover tint */}
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none"
+                    style={{ background: 'rgba(255,255,255,0.03)' }}
+                  />
+
+                  {/* Icon — sits above the line visually */}
                   <span
-                    className="shrink-0 transition-all duration-200 relative"
+                    className="relative shrink-0 transition-all duration-150"
                     style={{
+                      zIndex: 3,
                       color: active ? '#ffffff' : 'currentColor',
                       filter: active
-                        ? 'drop-shadow(0 0 7px rgba(255,255,255,0.9)) drop-shadow(0 0 14px rgba(200,220,255,0.6))'
+                        ? 'drop-shadow(0 0 6px rgba(255,255,255,0.85)) drop-shadow(0 0 12px rgba(96,165,250,0.55))'
                         : 'none',
-                      zIndex: 2,
-                    }}>
+                    }}
+                  >
                     {icon}
                   </span>
 
                   {/* Label */}
                   <span
-                    className="text-[10px] font-medium leading-none relative"
+                    className="relative text-[11px] font-medium leading-none transition-all duration-150"
                     style={{
-                      zIndex: 2,
+                      zIndex: 3,
                       textShadow: active
-                        ? '0 0 8px rgba(255,255,255,0.8), 0 0 18px rgba(200,220,255,0.5)'
+                        ? '0 0 8px rgba(255,255,255,0.75), 0 0 18px rgba(96,165,250,0.50)'
                         : 'none',
-                    }}>
+                    }}
+                  >
                     {label}
                   </span>
-
-                  {/* Hover shimmer */}
-                  <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none"
-                    style={{ background: 'rgba(255,255,255,0.035)' }}
-                  />
                 </Link>
               );
             })}
-
-            {pid && (() => {
-              const active = location.pathname.includes('/bim');
-              return (
-                <Link
-                  to={`/projects/${pid}/bim`}
-                  data-active={active ? 'true' : undefined}
-                  className="relative flex flex-col items-center justify-center gap-[3px] py-[11px] transition-all duration-150 group z-10"
-                  style={{ color: active ? '#ffffff' : 'rgba(100,110,120,1)', textDecoration: 'none' }}
-                  onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.color = '#d1d5db'; }}
-                  onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.color = 'rgba(100,110,120,1)'; }}
-                >
-                  <span style={{ color: active ? '#ffffff' : 'currentColor', filter: active ? 'drop-shadow(0 0 7px rgba(255,255,255,0.9))' : 'none', zIndex: 2 }}>
-                    <Box className="w-[18px] h-[18px]" />
-                  </span>
-                  <span className="text-[10px] font-medium" style={{ zIndex: 2, textShadow: active ? '0 0 8px rgba(255,255,255,0.8)' : 'none' }}>BIM</span>
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" style={{ background: 'rgba(255,255,255,0.035)' }} />
-                </Link>
-              );
-            })()}
           </nav>
 
-          {/* Logout — bottom of strip, non-scrolling */}
-          <div className="shrink-0 pb-4 z-10">
-            <button
-              onClick={handleLogout}
-              className="flex flex-col items-center justify-center gap-[3px] py-3 w-full text-gray-600 hover:text-white transition-all group"
-              title="Logout"
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
-            >
-              <LogOut className="w-[18px] h-[18px]" />
-              <span className="text-[10px] font-medium">Logout</span>
-            </button>
-          </div>
+          {/* Logout pinned at bottom */}
+          <button
+            onClick={handleLogout}
+            className="shrink-0 flex flex-col items-center justify-center gap-[5px] py-[10px] mb-3 text-gray-600 hover:text-white transition-all"
+            style={{ position: 'relative', zIndex: 2 }}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'transparent'}
+            title="Logout"
+          >
+            <LogOut className="w-[18px] h-[18px]" />
+            <span className="text-[11px] font-medium leading-none">Logout</span>
+          </button>
         </aside>
 
-        {/* ── MOBILE DRAWER ──────────────────────────────────── */}
+        {/* ── MOBILE DRAWER ──────────────────────────────── */}
         {isMobileMenuOpen && (
           <div className="lg:hidden fixed inset-0 z-40 top-14">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
             <div className="absolute left-0 top-0 bottom-0 w-64 bg-[#0A0A0A] border-r border-gray-800 overflow-y-auto">
               <div className="px-3 py-3">
-                <button onClick={() => { setIsMobileMenuOpen(false); window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })); }}
+                <button
+                  onClick={() => { setIsMobileMenuOpen(false); window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })); }}
                   className="w-full flex items-center gap-3 px-4 py-3 bg-[#111] border border-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors">
-                  <Search className="w-4 h-4" /><span className="text-sm flex-1 text-left">Search…</span>
+                  <Search className="w-4 h-4" />
+                  <span className="text-sm flex-1 text-left">Search…</span>
                   <kbd className="px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-[10px]">⌘K</kbd>
                 </button>
               </div>
@@ -419,7 +294,7 @@ function Layout() {
                       className="flex items-center gap-3 px-4 py-3 rounded-xl transition-all"
                       style={{
                         color: active ? '#ffffff' : 'rgba(156,163,175,1)',
-                        background: active ? 'linear-gradient(135deg,rgba(37,99,235,0.25),rgba(37,99,235,0.08))' : 'transparent',
+                        background: active ? 'linear-gradient(135deg, rgba(37,99,235,0.25), rgba(37,99,235,0.08))' : 'transparent',
                         border: active ? '1px solid rgba(59,130,246,0.2)' : '1px solid transparent',
                       }}>
                       <span style={{ color: active ? '#93c5fd' : 'currentColor', filter: active ? 'drop-shadow(0 0 5px rgba(96,165,250,0.8))' : 'none' }}>{icon}</span>
@@ -428,12 +303,31 @@ function Layout() {
                   );
                 })}
               </nav>
+              {user && (
+                <div className="border-t border-gray-800 px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center text-white text-sm font-bold">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm text-white">{user.name}</span>
+                  </div>
+                  <button onClick={handleLogout} className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-[#111] rounded-lg">
+                    <LogOut className="w-4 h-4" />Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* ── MAIN CONTENT — scrollable ──────────────────────── */}
-        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
+        {/* ══════════════════════════════════════════════════
+            MAIN CONTENT — offset 100px left (sidebar width)
+            Scrolls independently while sidebar stays fixed
+            ════════════════════════════════════════════════ */}
+        <main
+          className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto"
+          style={{ marginLeft: '100px' }}
+        >
           <div className="max-w-7xl mx-auto px-4 py-6 sm:px-5 lg:px-6 min-w-0">
             <Outlet />
           </div>
