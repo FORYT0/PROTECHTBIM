@@ -153,7 +153,7 @@ export const TimeTrackingPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#000000] space-y-6 pb-8">
+      <div className="space-y-5 pb-8 min-w-0">
         <div className="bg-[#0A0A0A] rounded-xl border border-gray-800 p-6">
           <h1 className="text-3xl font-bold text-white">Workforce Intelligence Center</h1>
         </div>

@@ -102,7 +102,7 @@ class CostEntryService {
   private api: AxiosInstance;
   private baseURL: string;
 
-  constructor(baseURL: string = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1') {
+  constructor(baseURL: string = import.meta.env.VITE_API_URL || '${API_BASE}') {
     this.baseURL = baseURL;
     this.api = axios.create({
       baseURL: this.baseURL,

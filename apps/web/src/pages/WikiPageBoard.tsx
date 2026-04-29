@@ -133,7 +133,7 @@ export const WikiPageBoard: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-[#000000]">
+        <div className="min-w-0">
             {/* WIKI HEADER - Only show when not in full editor mode */}
             {!isEditing && !isCreating && (
                 <div className="bg-[#0A0A0A] border-b border-gray-800 p-6">

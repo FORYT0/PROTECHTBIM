@@ -79,7 +79,7 @@ class ActivityService {
   private baseURL: string;
 
   constructor(baseURL: string = import.meta.env.VITE_API_URL || 
-    (import.meta.env.PROD ? '/api/v1' : 'http://localhost:3000/api/v1')) {
+    (import.meta.env.PROD ? '/api/v1' : '${API_BASE}')) {
     this.baseURL = baseURL;
     this.api = axios.create({
       baseURL: this.baseURL,

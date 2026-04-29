@@ -30,7 +30,7 @@ class NotificationService {
   public connect(token: string): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const apiUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL?.replace('/api/v1','') || '';
         // Strip /api/v1 if present for socket connection
         const socketUrl = apiUrl.replace(/\/api\/v1\/?$/, '');
         this.socket = io(socketUrl, {

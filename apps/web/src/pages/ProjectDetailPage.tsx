@@ -460,7 +460,7 @@ function ProjectDetailPage() {
           icon={Zap}
           iconColor="text-yellow-400"
           title="Completion"
-          value={`${mockKPIs.completion}%`}
+          value={`${realKPIs.completion}%`}
           subtitle="+3% this week"
           trend={{ value: "+3%", direction: "up", color: "text-green-400" }}
           to={`/projects/${id}/gantt`}
@@ -770,8 +770,8 @@ function ProjectDetailPage() {
               <div className="pt-3 border-t border-gray-800">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-gray-300">Variance</span>
-                  <span className={`text-sm font-bold ${mockFinancials.variance < 0 ? 'text-red-400' : 'text-green-400'}`}>
-                    {mockFinancials.variance > 0 ? '+' : ''}{mockFinancials.variance}%
+                  <span className={`text-sm font-bold ${realKPIs.pendingCOs < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                    {realKPIs.pendingCOs > 0 ? '+' : ''}{realKPIs.pendingCOs}%
                   </span>
                 </div>
               </div>

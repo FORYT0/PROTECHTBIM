@@ -52,7 +52,7 @@ export const SprintDetailPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:3000/api/v1/sprints/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "/api/v1"}/sprints/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

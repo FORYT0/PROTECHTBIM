@@ -187,7 +187,7 @@ export const CostTrackingPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#000000] space-y-6 pb-8">
+    <div className="space-y-5 pb-8 min-w-0">
       {/* Inline error banner — page still renders with zero data */}
       {error && (
         <div className="bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 flex items-center justify-between gap-3">
