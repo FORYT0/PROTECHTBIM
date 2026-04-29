@@ -1,0 +1,26 @@
+{
+  "name": "PROTECHT BIM",
+  "short_name": "PROTECHT",
+  "description": "Construction Intelligence Platform — manage projects, contracts, snags, and AI-powered insights.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "any",
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "en",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ],
+  "screenshots": [
+    { "src": "/screenshot-1.png", "sizes": "1280x800", "type": "image/png", "label": "Project Dashboard" },
+    { "src": "/screenshot-2.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "Mobile View" }
+  ],
+  "shortcuts": [
+    { "name": "Projects", "short_name": "Projects", "description": "View all projects", "url": "/projects", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Snag List", "short_name": "Snags", "description": "View site defects", "url": "/snags", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Daily Reports", "short_name": "Reports", "description": "Submit site diary", "url": "/daily-reports", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

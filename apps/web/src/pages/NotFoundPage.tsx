@@ -1,31 +1,57 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Building2, Home, ArrowLeft, Search } from 'lucide-react';
 
 function NotFoundPage() {
+  const navigate = useNavigate();
   return (
-    <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
-      <div className="mb-8">
-        <div className="w-24 h-24 bg-gradient-to-br from-error-main to-error-dark rounded-3xl flex items-center justify-center elevation-4 mx-auto">
-          <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+    <div className="min-h-screen bg-black flex items-center justify-center px-4">
+      <div className="text-center max-w-md">
+        {/* Animated 404 */}
+        <div className="relative mb-8">
+          <div className="text-[120px] font-black text-gray-900 leading-none select-none">404</div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/30">
+              <Building2 className="w-10 h-10 text-white" />
+            </div>
+          </div>
+        </div>
+
+        <h1 className="text-2xl font-bold text-white mb-3">Page not found</h1>
+        <p className="text-gray-400 text-sm mb-8 leading-relaxed">
+          The page you're looking for doesn't exist or has been moved. Check the URL or navigate back to the dashboard.
+        </p>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button onClick={() => navigate(-1)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#0A0A0A] border border-gray-800 hover:border-gray-700 rounded-xl text-sm font-medium text-gray-300 hover:text-white transition-all">
+            <ArrowLeft className="w-4 h-4" />Go Back
+          </button>
+          <button onClick={() => navigate('/')}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-sm font-medium text-white transition-all shadow-lg shadow-blue-500/20">
+            <Home className="w-4 h-4" />Dashboard
+          </button>
+        </div>
+
+        {/* Quick links */}
+        <div className="mt-10 pt-6 border-t border-gray-800">
+          <p className="text-xs text-gray-600 mb-4">Quick navigation</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {[
+              ['Projects', '/projects'],
+              ['Work Packages', '/work-packages'],
+              ['Contracts', '/contracts'],
+              ['Snags', '/snags'],
+              ['Change Orders', '/change-orders'],
+              ['Time Tracking', '/time-tracking'],
+            ].map(([label, href]) => (
+              <button key={href} onClick={() => navigate(href)}
+                className="px-3 py-1.5 bg-[#0A0A0A] border border-gray-800 hover:border-gray-700 rounded-lg text-xs text-gray-500 hover:text-white transition-all">
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-      <h1 className="text-8xl font-bold text-text-primary mb-4">404</h1>
-      <p className="text-2xl font-semibold text-text-primary mb-2">
-        Page Not Found
-      </p>
-      <p className="text-lg text-text-secondary mb-8 max-w-md">
-        The page you're looking for doesn't exist or has been moved.
-      </p>
-      <Link
-        to="/"
-        className="btn-primary inline-flex items-center space-x-2"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-        <span>Go Back Home</span>
-      </Link>
     </div>
   );
 }

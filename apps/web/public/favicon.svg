@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#g)"/>
+  <!-- Building icon -->
+  <rect x="6" y="8" width="20" height="18" rx="1.5" fill="none" stroke="white" stroke-width="1.5"/>
+  <rect x="10" y="12" width="3" height="3" rx="0.5" fill="white"/>
+  <rect x="15.5" y="12" width="3" height="3" rx="0.5" fill="white"/>
+  <rect x="10" y="17" width="3" height="3" rx="0.5" fill="white"/>
+  <rect x="15.5" y="17" width="3" height="3" rx="0.5" fill="white"/>
+  <rect x="12.5" y="21" width="7" height="5" rx="0.5" fill="white"/>
+  <!-- Roof peak -->
+  <path d="M5 9.5 L16 3 L27 9.5" fill="none" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>

@@ -50,7 +50,20 @@ function App() {
         },
       }} />
       <GlobalWebSocketListener />
-      <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-black text-primary-500"><div className="animate-spin h-8 w-8 border-4 border-current border-t-transparent rounded-full"></div></div>}>
+      <Suspense fallback={<div className="flex h-screen w-full flex-col items-center justify-center bg-black gap-4">
+          <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center shadow-2xl shadow-blue-500/30 animate-pulse">
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div className="text-center">
+            <p className="text-white font-semibold text-sm">PROTECHT BIM</p>
+            <p className="text-gray-600 text-xs mt-0.5">Loading…</p>
+          </div>
+          <div className="h-0.5 w-32 bg-gray-900 rounded-full overflow-hidden mt-2">
+            <div className="h-full bg-blue-600 rounded-full animate-[loading_1.5s_ease-in-out_infinite]" style={{width: '60%'}} />
+          </div>
+        </div>}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
