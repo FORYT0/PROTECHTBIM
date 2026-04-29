@@ -45,3 +45,11 @@ SEED COMPLETE!
 
 
 === COMMIT ===
+M  apps/web/src/pages/ProjectDetailPage.tsx
+M  commit.sh
+M  git_output.txt
+[main 742a3a2] feat: ProjectHealthCard integrated in ProjectDetailPage
+ 3 files changed, 73 insertions(+), 34 deletions(-)
+To https://github.com/FORYT0/PROTECHTBIM.git
+   66f8fef..742a3a2  main -> main
+DONE
