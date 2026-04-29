@@ -8,10 +8,11 @@ import { notificationService } from '../services/NotificationService';
 import { AIBrain } from './ai/AIBrain';
 import { useAIStore } from '../stores/useAIStore';
 import { CurrencyToggle } from './CurrencyToggle';
+import { GlobalSearch } from './GlobalSearch';
 import {
   Home, Building2, Package, Calendar, Clock,
   DollarSign, Users, LogOut, Menu, X,
-  FileText, TrendingUp, Clipboard, AlertCircle, Sparkles, Box, Activity
+  FileText, TrendingUp, Clipboard, AlertCircle, Sparkles, Box, Activity, Search
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { projectService } from '../services/projectService';
@@ -82,7 +83,6 @@ function Layout() {
 
   const pq = (path: string) => `${path}${pid ? `?project_id=${pid}` : ''}`;
 
-  // All nav items — same list for desktop and mobile
   const navItems: [string, string, React.ReactNode][] = [
     ['/', 'Home', <Home className="w-4 h-4" />],
     ['/projects', 'Projects', <Building2 className="w-4 h-4" />],
@@ -100,6 +100,9 @@ function Layout() {
 
   return (
     <div className="min-h-screen bg-black overflow-x-hidden">
+      {/* Global Search */}
+      <GlobalSearch />
+
       <header className="bg-[#0A0A0A] border-b border-gray-800 sticky top-0 z-50">
         <nav className="px-3 sm:px-4 lg:px-6 max-w-[100vw]">
           <div className="flex h-14 items-center justify-between gap-2 min-w-0">
@@ -133,10 +136,19 @@ function Layout() {
             </div>
 
             {/* Desktop right */}
-            <div className="hidden lg:flex items-center gap-2 shrink-0">
+            <div className="hidden lg:flex items-center gap-1.5 shrink-0">
               {user && (
                 <>
-                  <button onClick={toggleAIBrain} className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-900/30 transition-all" title="ARIA AI Copilot">
+                  {/* Search hint */}
+                  <button
+                    onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-[#111] border border-gray-800 rounded-lg text-xs text-gray-500 hover:text-gray-300 hover:border-gray-700 transition-all"
+                    title="Global search">
+                    <Search className="w-3.5 h-3.5" />
+                    <span>Search</span>
+                    <kbd className="px-1 py-0.5 bg-gray-800 border border-gray-700 rounded text-[10px]">⌘K</kbd>
+                  </button>
+                  <button onClick={toggleAIBrain} className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-900/30 transition-all" title="ARIA AI">
                     <Sparkles className="w-4 h-4" />
                   </button>
                   <CurrencyToggle />
@@ -174,7 +186,17 @@ function Layout() {
         {/* Mobile menu */}
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t border-gray-800 bg-[#0A0A0A] max-h-[80vh] overflow-y-auto">
-            <div className="space-y-0.5 px-3 py-3">
+            {/* Mobile search */}
+            <div className="px-3 py-2">
+              <button
+                onClick={() => { setIsMobileMenuOpen(false); window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true })); }}
+                className="w-full flex items-center gap-3 px-4 py-3 bg-[#111] border border-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors">
+                <Search className="w-4 h-4" />
+                <span className="text-sm">Search everything…</span>
+                <kbd className="ml-auto px-1.5 py-0.5 bg-gray-800 border border-gray-700 rounded text-[10px]">⌘K</kbd>
+              </button>
+            </div>
+            <div className="space-y-0.5 px-3 pb-3">
               {navItems.map(([href, label, icon]) => {
                 const activePath = href.split('?')[0];
                 return (

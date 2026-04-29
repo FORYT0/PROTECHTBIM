@@ -2,52 +2,71 @@
 LOG="C:/Users/User/AndroidStudioProjects/PROTECHT BIM/git_output.txt"
 cd "C:/Users/User/AndroidStudioProjects/PROTECHT BIM"
 
-echo "=== REBUILD API BUNDLE ===" > "$LOG"
+echo "=== REBUILD BUNDLE ===" > "$LOG"
 node apps/api/scripts/build-bundle.js 2>&1 | tail -3 >> "$LOG"
 
 echo "" >> "$LOG"
-echo "=== COMMIT ALL CHANGES ===" >> "$LOG"
+echo "=== STAGE ALL ===" >> "$LOG"
 git add -A >> "$LOG" 2>&1
 git status --short >> "$LOG" 2>&1
 
-git commit -m "fix: Full A-grade audit — 23 issues resolved across all pages
+echo "" >> "$LOG"
+echo "=== COMMIT ===" >> "$LOG"
+git commit -m "feat: Premium SaaS features — Dashboard, Search, PDF Reports, Auth redesign
 
-CRITICAL FIXES:
-- ActivityPage: rewrote to use useProjectContext (no more 'No Project' dead end)
-- CalendarPage: real metrics from loaded WPs (not hardcoded 0), uses useProjectContext
-- ResourceManagementPage: real metrics from utilization API, uniform typography
-- ContractsPage: fixed import (useSearchParams was missing), edit modal wired correctly
-  via initialData prop (contract prop didn't exist), edit button visible on hover
-- ContractFormModal: edit mode now works — contractToFormData maps live data to form
-- ProjectTimeCostPage: replaced axios+hardcoded URL with apiRequest() — fixes 401 in prod
-- Layout.tsx: fixed mobile nav (wrong 4-element array pattern), unified nav items array,
-  added Activity link, cleaned up code
-- SnagsPage: status workflow buttons (Start Work → Mark Resolved → Verify & Close),
-  edit button opens modal pre-filled with snag data
-- ChangeOrdersPage: Submit/Approve/Reject buttons inline, rejection reason form inline,
-  rejection reason displayed on rejected COs
-- DailyReportsPage: edit button shows on hover, opens modal pre-filled, updateDailyReport
-  API call (was write-only before)
+EXECUTIVE DASHBOARD (HomePage.tsx):
+- Portfolio health score ring with RAG status (computed live)
+- KPI grid: projects, overdue WPs, open snags, pending COs, CO value
+- Active Projects list with per-row health dots
+- Action Required alert panel with unread badge
+- ARIA AI insight panel (context-aware construction advice)
+- Dynamic greeting + hero gradient with decorative glow
+- Quick Access module grid (6 major workflows)
+- Demo project callout banner
 
-NEW SERVICES:
-- snagService: updateSnag, verifySnag, assignSnag, closeSnag, deleteSnag
-- changeOrderService: submitChangeOrder, rejectChangeOrder (clean rewrite)
-- dailyReportService: updateDailyReport added
-- contractService: updateContract added, clean rewrite
+CMD+K GLOBAL SEARCH (GlobalSearch.tsx):
+- Opens anywhere with Ctrl+K / Cmd+K
+- Real-time project search with 200ms debounce
+- 8 pre-loaded quick nav shortcuts
+- Arrow key navigation, Enter to select, Esc to dismiss
+- Backdrop blur, keyboard hints footer
+- Search button with ⌘K hint in desktop nav
+- Full-width mobile search trigger
 
-NEW SHARED UTILITIES:
-- utils/formatDate.ts: formatDate(), formatDateShort(), formatDateLong(), isOverdue(), daysFromNow()
-- utils/formatCurrency.ts: formatKES(), formatUSD(), formatNumber()
-- components/StateComponents.tsx: LoadingState, ErrorState, EmptyState — uniform UX
+LAYOUT (Layout.tsx):
+- GlobalSearch component integrated at root level
+- Desktop nav: search button with shortcut badge
+- Mobile nav: full-width search button above nav links
 
-UNIFORMITY:
-- All pages now use useProjectContext() consistently
-- All pages use ProjectPicker for project selection
-- All KPI cards now show real computed data (not hardcoded zeros)
-- Mobile nav rebuilt with unified navItems array — no more duplicate/wrong 4-el entries
-- Typography: ResourceManagementPage now matches system style (no ALL CAPS, font-black)
-- All pages use space-y-5, min-w-0, pb-8 pattern
-- Error/loading/empty states uniform across pages" >> "$LOG" 2>&1
+PDF REPORT GENERATOR (utils/reportGenerator.ts):
+- generateProjectReportHTML(): branded A4 HTML with:
+  - Dark gradient cover page (name, dates, status, progress)
+  - Executive summary — 6 KPI cards with colour coding
+  - Work packages table with inline SVG progress bars
+  - Snag register with severity/status colour badges
+  - Change orders table with cost impact (+/-) column
+  - Recent site activity from daily reports
+- downloadProjectReport(): saves .html file
+- printProjectReport(): opens browser print → PDF
+
+PROJECT DETAIL (ProjectDetailPage.tsx):
+- 'Report' button in header actions — fetches all project data
+  (snags, COs, daily reports, work packages) then generates report
+- isGeneratingReport state with loading indicator
+- Imports Download icon + reportGenerator + all data services
+
+LOGIN PAGE (LoginPage.tsx — full redesign):
+- Split layout: left brand panel + right form panel
+- Left: gradient bg, grid overlay, feature list, social proof
+- Right: clean email/password form, show/hide password
+- 3 demo role buttons (click to prefill credentials)
+- Password field with show/hide toggle
+
+REGISTER PAGE (RegisterPage.tsx — full redesign):
+- Matching split layout with left brand panel
+- Password strength indicator (4-segment bar: Weak→Strong)
+- Password match validation in real-time
+- Matching button styles and form UX" >> "$LOG" 2>&1
 
 echo "" >> "$LOG"
 echo "=== PUSH ===" >> "$LOG"

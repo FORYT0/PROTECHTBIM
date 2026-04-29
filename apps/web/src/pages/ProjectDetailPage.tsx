@@ -16,8 +16,13 @@ import {
   Calendar, Clock, DollarSign, Users, Package, AlertTriangle, 
   FileText, CheckCircle, XCircle, AlertCircle,
   Star, Edit, Trash2, ExternalLink, ChevronRight, Activity,
-  Layers, Target, Zap, TrendingUp, Clipboard
+  Layers, Target, Zap, TrendingUp, Clipboard, Download
 } from 'lucide-react';
+import { printProjectReport, downloadProjectReport } from '../utils/reportGenerator';
+import { snagService as snagSvc } from '../services/snagService';
+import { changeOrderService as coSvc } from '../services/changeOrderService';
+import { dailyReportService as drSvc } from '../services/dailyReportService';
+import { workPackageService as wpSvc } from '../services/workPackageService';
 
 const statusColors: Record<ProjectStatus, string> = {
   [ProjectStatus.ACTIVE]: 'bg-green-500/20 text-green-400 border border-green-500/30',
@@ -88,6 +93,53 @@ function ProjectDetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  const handleGenerateReport = async (mode: 'print' | 'download' = 'download') => {
+    if (!project) return;
+    setIsGeneratingReport(true);
+    try {
+      const [snags, cos, drs, wpsResp] = await Promise.all([
+        snagSvc.getSnagsByProject(project.id).catch(() => []),
+        coSvc.getChangeOrdersByProject(project.id).catch(() => []),
+        drSvc.getDailyReportsByProject(project.id).catch(() => []),
+        wpSvc.listWorkPackages({ project_id: project.id, per_page: 200 }).catch(() => ({ work_packages: [] })),
+      ]);
+      const wps = (wpsResp as any).work_packages || [];
+      const openSnags = snags.filter((s: any) => s.status === 'Open').length;
+      const criticalSnags = snags.filter((s: any) => s.severity === 'Critical').length;
+      const pendingCOs = cos.filter((c: any) => ['Submitted','Under Review'].includes(c.status)).length;
+      const totalCOValue = cos.reduce((s: number, c: any) => s + (Number(c.costImpact) || 0), 0);
+      const reportData = {
+        projectName: project.name,
+        projectStatus: project.status || 'active',
+        progress: (project as any).progress || 0,
+        startDate: project.start_date ? String(project.start_date) : undefined,
+        endDate: project.end_date ? String(project.end_date) : undefined,
+        generatedAt: new Date().toLocaleDateString('en-GB', { weekday:'long', day:'2-digit', month:'long', year:'numeric' }),
+        workPackages: wps.map((w: any) => ({
+          subject: w.subject, status: w.status || 'New',
+          percentageDone: w.percentageDone || 0, dueDate: w.due_date || w.dueDate,
+        })),
+        snags: snags.map((s: any) => ({
+          description: s.description, location: s.location,
+          severity: s.severity, status: s.status,
+        })),
+        changeOrders: cos.map((c: any) => ({
+          title: c.title, reason: c.reason,
+          status: c.status, costImpact: Number(c.costImpact) || 0,
+        })),
+        dailyReports: drs.map((r: any) => ({
+          reportDate: r.reportDate, workCompleted: r.workCompleted || '',
+          manpowerCount: r.manpowerCount || 0, weather: r.weather,
+        })),
+        metrics: { totalWPs: wps.length, completedWPs: wps.filter((w: any) => ['Done','Closed'].includes(w.status || '')).length, openSnags, criticalSnags, pendingCOs, totalCOValue },
+      };
+      if (mode === 'print') printProjectReport(reportData);
+      else downloadProjectReport(reportData);
+    } catch (e) { console.error('Report error:', e); }
+    finally { setIsGeneratingReport(false); }
+  };
 
   // Real dashboard data from API
   const { data: dashboard } = useQuery<DashboardData>({
@@ -503,7 +555,15 @@ function ProjectDetailPage() {
               <Package className="w-4 h-4" />
               Backlog
             </Link>
-            <button
+                      <button
+              onClick={() => handleGenerateReport('download')}
+              disabled={isGeneratingReport}
+              className="flex items-center gap-2 px-4 py-2 bg-[#111] hover:bg-[#1a1a1a] border border-gray-700 rounded-lg text-sm font-medium text-gray-300 hover:text-white transition-colors disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" />
+              {isGeneratingReport ? 'Generating…' : 'Report'}
+            </button>
+          <button
               onClick={() => setIsEditModalOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-[#0A0A0A] border border-gray-800 rounded-lg text-sm text-gray-300 hover:bg-[#111111] hover:border-gray-700 transition-all"
             >

@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Building2, Eye, EyeOff, AlertCircle, ArrowRight, Shield, Zap, BarChart3 } from 'lucide-react';
 
-const LoginPage: React.FC = () => {
+function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -14,7 +16,6 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
-
     try {
       await login(email, password);
       navigate('/');
@@ -25,166 +26,178 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const fillDemo = (role: 'admin' | 'pm' | 'eng') => {
+    const emails = { admin: 'admin@protecht.demo', pm: 'pm@protecht.demo', eng: 'eng@protecht.demo' };
+    setEmail(emails[role]);
+    setPassword('Demo1234!');
+  };
+
+  const features = [
+    { icon: BarChart3,  label: 'Real-time portfolio intelligence' },
+    { icon: Shield,     label: 'Contract & change order management' },
+    { icon: Zap,        label: 'AI-powered risk assessment (ARIA)' },
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background-primary px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Logo/Brand Section */}
-        <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl flex items-center justify-center elevation-3">
-              <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
+    <div className="min-h-screen bg-black flex">
+
+      {/* ── LEFT PANEL — branding ──────────────────────────────── */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 flex-col justify-between p-12 relative overflow-hidden">
+        {/* Gradient bg */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#050510] via-[#071025] to-[#050510]" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+        
+        {/* Grid overlay */}
+        <div className="absolute inset-0 opacity-[0.03]"
+          style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+
+        {/* Logo */}
+        <div className="relative flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center shadow-xl shadow-blue-500/20">
+            <Building2 className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-4xl font-bold text-text-primary mb-2">
-            Welcome Back
-          </h2>
-          <p className="text-text-secondary text-lg">
-            Sign in to PROTECHT BIM
-          </p>
-          <p className="text-text-hint text-sm mt-1">
-            Construction Project Management Platform
-          </p>
+          <div>
+            <span className="text-white font-bold text-lg">PROTECHT</span>
+            <span className="text-blue-400 font-bold text-lg"> BIM</span>
+          </div>
         </div>
 
-        {/* Login Form */}
-        <div className="card">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="rounded-lg bg-error-dark/20 border border-error-main p-4 elevation-1">
-                <div className="flex items-center">
-                  <svg className="w-5 h-5 text-error-main mr-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                  <p className="text-sm font-medium text-error-light">{error}</p>
+        {/* Hero text */}
+        <div className="relative">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-xs text-blue-400 font-medium mb-6">
+            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full animate-pulse" />
+            Construction Intelligence Platform
+          </div>
+          <h1 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-5">
+            Manage every<br />
+            <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              KES Billion
+            </span>
+            <br />project with clarity.
+          </h1>
+          <p className="text-gray-400 text-lg leading-relaxed max-w-md">
+            From contracts and change orders to snag lists and daily reports — PROTECHT BIM gives your team one intelligent platform.
+          </p>
+
+          {/* Feature list */}
+          <div className="mt-8 space-y-3">
+            {features.map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                  <Icon className="w-4 h-4 text-blue-400" />
                 </div>
+                <span className="text-gray-300 text-sm">{label}</span>
               </div>
-            )}
+            ))}
+          </div>
+        </div>
 
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="email-address" className="block text-sm font-medium text-text-secondary mb-2">
-                  Email Address
-                </label>
-                <input
-                  id="email-address"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="input-material"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
+        {/* Social proof */}
+        <div className="relative flex items-center gap-6">
+          <div className="flex -space-x-2">
+            {['A', 'P', 'E'].map((l, i) => (
+              <div key={i} className={`w-9 h-9 rounded-full border-2 border-[#050510] flex items-center justify-center text-sm font-bold text-white ${['bg-blue-600', 'bg-purple-600', 'bg-green-600'][i]}`}>{l}</div>
+            ))}
+          </div>
+          <div>
+            <p className="text-white text-sm font-medium">Trusted by construction teams</p>
+            <p className="text-gray-500 text-xs">Nairobi · Mombasa · Kampala · Dar es Salaam</p>
+          </div>
+        </div>
+      </div>
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-text-secondary mb-2">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="input-material"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                />
-              </div>
+      {/* ── RIGHT PANEL — login form ──────────────────────────── */}
+      <div className="flex-1 flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16">
+        <div className="w-full max-w-md mx-auto">
+
+          {/* Mobile logo */}
+          <div className="flex items-center gap-3 mb-8 lg:hidden">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-white" />
             </div>
+            <div>
+              <span className="text-white font-bold text-lg">PROTECHT</span>
+              <span className="text-blue-400 font-bold text-lg"> BIM</span>
+            </div>
+          </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 rounded bg-surface-tertiary border-surface-elevated text-primary-600 focus:ring-primary-600 focus:ring-offset-background-primary"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-text-secondary">
-                  Remember me
-                </label>
-              </div>
+          <h2 className="text-2xl font-bold text-white mb-1">Sign in</h2>
+          <p className="text-gray-500 text-sm mb-8">Welcome back. Enter your credentials to continue.</p>
 
-              <div className="text-sm">
-                <button type="button" className="font-medium text-primary-500 hover:text-primary-400 transition-colors">
-                  Forgot password?
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Email address</label>
+              <input type="email" required autoComplete="email" value={email}
+                onChange={e => setEmail(e.target.value)} disabled={isLoading}
+                placeholder="you@company.com"
+                className="w-full px-4 py-3 bg-[#0A0A0A] border border-gray-800 rounded-xl text-white placeholder-gray-600 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all disabled:opacity-50" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1.5">Password</label>
+              <div className="relative">
+                <input type={showPassword ? 'text' : 'password'} required autoComplete="current-password"
+                  value={password} onChange={e => setPassword(e.target.value)} disabled={isLoading}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 bg-[#0A0A0A] border border-gray-800 rounded-xl text-white placeholder-gray-600 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all pr-12 disabled:opacity-50" />
+                <button type="button" onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors">
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="btn-primary w-full"
-            >
+            <button type="submit" disabled={isLoading || !email || !password}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-800 disabled:text-gray-600 text-white font-semibold rounded-xl transition-all text-sm shadow-lg shadow-blue-500/20 disabled:shadow-none">
               {isLoading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Signing in...
-                </span>
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Signing in…
+                </>
               ) : (
-                'Sign In'
+                <>Sign In <ArrowRight className="w-4 h-4" /></>
               )}
             </button>
           </form>
-        </div>
 
-
-        {/* Demo Credentials */}
-        <div className="rounded-xl border border-[#1E3A5F] bg-[#0A1929] p-4 text-sm">
-          <p className="text-blue-300 font-semibold mb-2 flex items-center gap-2">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            Demo Credentials
-          </p>
-          <div className="space-y-1.5 text-gray-400">
-            <div className="flex justify-between"><span>Admin:</span><span className="text-gray-200 font-mono text-xs">admin@protecht.demo</span></div>
-            <div className="flex justify-between"><span>PM:</span><span className="text-gray-200 font-mono text-xs">pm@protecht.demo</span></div>
-            <div className="flex justify-between"><span>Engineer:</span><span className="text-gray-200 font-mono text-xs">eng@protecht.demo</span></div>
-            <div className="flex justify-between border-t border-[#1E3A5F] pt-1.5 mt-1.5">
-              <span>Password (all):</span>
-              <button
-                type="button"
-                onClick={() => { setEmail('admin@protecht.demo'); setPassword('Demo1234!'); }}
-                className="text-primary-400 font-mono text-xs hover:text-primary-300 underline"
-              >
-                Demo1234! (click to fill)
-              </button>
+          {/* Demo credentials */}
+          <div className="mt-6 bg-[#0A0A0A] border border-gray-800 rounded-xl p-4">
+            <p className="text-xs font-semibold text-blue-400 mb-3 flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />Demo Access
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {(['admin', 'pm', 'eng'] as const).map(role => (
+                <button key={role} type="button" onClick={() => fillDemo(role)}
+                  className="flex flex-col items-center gap-1 p-2 bg-[#111] hover:bg-[#1a1a1a] border border-gray-800 hover:border-gray-700 rounded-lg transition-all group">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${role === 'admin' ? 'bg-blue-600' : role === 'pm' ? 'bg-purple-600' : 'bg-green-600'}`}>
+                    {role === 'admin' ? 'A' : role === 'pm' ? 'P' : 'E'}
+                  </div>
+                  <span className="text-[10px] text-gray-400 capitalize group-hover:text-white transition-colors">{role === 'eng' ? 'Engineer' : role === 'pm' ? 'Proj. Mgr' : 'Admin'}</span>
+                </button>
+              ))}
             </div>
+            <p className="text-[10px] text-gray-600 mt-2 text-center">Click a role to pre-fill credentials · Password: Demo1234!</p>
           </div>
-        </div>
 
-        {/* Sign Up Link */}
-        <div className="text-center">
-          <p className="text-text-secondary">
-            Don't have an account?{' '}
-            <button
-              type="button"
-              onClick={() => navigate('/register')}
-              className="font-semibold text-primary-500 hover:text-primary-400 transition-colors"
-            >
-              Create Account
-            </button>
+          <p className="text-center text-sm text-gray-600 mt-6">
+            New to PROTECHT?{' '}
+            <Link to="/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">Create account</Link>
           </p>
-        </div>
 
-        {/* Footer */}
-        <div className="text-center text-text-hint text-xs">
-          <p>© 2026 PROTECHT BIM. All rights reserved.</p>
+          <p className="text-center text-xs text-gray-700 mt-8">© 2026 PROTECHT BIM · Construction Intelligence Platform</p>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default LoginPage;
