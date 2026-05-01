@@ -1,0 +1,1 @@
+| `GROQ_API_KEY` | *(your Groq key from console.groq.com)* |
