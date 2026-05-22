@@ -1,4 +1,5 @@
 {
+  "$comment": "Vercel serverless config — updated to trigger deploy",
   "version": 2,
   "builds": [
     {
