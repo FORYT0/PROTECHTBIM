@@ -1,25 +1,23 @@
 # PROTECHT BIM — Render.com Deployment Config
-# This file tells Render how to build and run the API.
 # Free tier: 512MB RAM, shared CPU, spins down after 15min inactivity.
+# Database : Supabase (free, permanent)
+# Redis    : Upstash  (free, 10k req/day)
+# Frontend : Vercel   (free)
 
 services:
   - type: web
     name: protechtbim-api
     runtime: node
     plan: free
+    region: oregon
     buildCommand: npm install --include=dev && node apps/api/scripts/build-bundle.js
     startCommand: node apps/api/dist-bundle/main.js
     healthCheckPath: /health
     envVars:
+      # ── Runtime ────────────────────────────────────────────────
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 3000
-      - key: JWT_SECRET
-        generateValue: true
-      - key: CORS_ORIGIN
-        value: https://protechtbim-web.vercel.app
-      - key: GROQ_API_KEY
-        sync: false   # Set manually in Render dashboard
-      - key: DATABASE_URL
-        sync: false   # Set to your Neon/Supabase connection string
+
+      # ── Auth ─────────────�
