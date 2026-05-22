@@ -1,11 +1,11 @@
-# PROTECHT BIM — Deploy on Koyeb (Free) + Neon Postgres (Free)
-# No credit card required for either service.
-
+# PROTECHT BIM — Deploy on Koyeb (Free, no credit card required)
+#
 # ══════════════════════════════════════════════════════════════
 # STACK (100% free, no card):
-#   API:      Koyeb — 1 free web service (512MB RAM, no sleep)
-#   Database: Neon.tech — free Postgres (3GB, serverless)
-#   Frontend: Vercel — free hobby tier (unchanged)
+#   API:      Koyeb    — 1 free web service (512MB RAM, no sleep)
+#   Database: Supabase — free Postgres (already provisioned)
+#   Cache:    Upstash  — free Redis    (already provisioned)
+#   Frontend: Vercel   — free hobby tier (already deployed)
 # ══════════════════════════════════════════════════════════════
 
 app_name: protechtbim
@@ -33,12 +33,41 @@ services:
         value: production
       - key: PORT
         value: "3000"
-      # Set these in Koyeb dashboard → Service → Environment:
-      - key: DATABASE_URL
-        secret: true    # paste your Neon connection string
+      - key: LOG_LEVEL
+        value: info
+
+      # ── Auth (add as secrets in Koyeb dashboard) ──────────────
       - key: JWT_SECRET
-        secret: true    # generate: openssl rand -hex 32
+        secret: true
+      - key: JWT_EXPIRES_IN
+        value: "3600"
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: "604800"
+      - key: SESSION_SECRET
+        secret: true
+      - key: SESSION_TTL
+        value: "86400"
+
+      # ── Database — Supabase (add as secret in Koyeb dashboard) ─
+      # postgresql://postgres:<PASSWORD>@db.<REF>.supabase.co:5432/postgres
+      - key: DATABASE_URL
+        secret: true
+
+      # ── Cache — Upstash Redis (add as secret in Koyeb dashboard)
+      # rediss://:<PASSWORD>@<HOST>.upstash.io:6379
+      - key: REDIS_URL
+        secret: true
+
+      # ── CORS ──────────────────────────────────────────────────
       - key: CORS_ORIGIN
-        value: https://protechtbim-web.vercel.app
+        value: "https://protecht-bim.vercel.app,https://protechtbim-web.vercel.app,http://localhost:5173"
+
+      # ── AI — Groq free key (add as secret in Koyeb dashboard) ─
       - key: GROQ_API_KEY
-        secret: true    # your Groq key
+        secret: true
+
+      # ── Storage (disabled) ─────────────────────────────────────
+      - key: STORAGE_ENDPOINT
+        value: ""
+      - key: STORAGE_USE_SSL
+        value: "false"
