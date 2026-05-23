@@ -1,5 +1,6 @@
 /**
  * PROTECHT BIM API — Vercel Serverless Entry Point
+ * Last updated: 2026-05-23
  *
  * Identical to main.ts but:
  *  - No app.listen() — Vercel handles the port
@@ -202,6 +203,3 @@ async function initialize(): Promise<void> {
 const handler = async (req: Request, res: Response) => {
   await initialize().catch(err => console.error('Init error:', err));
   app(req, res);
-};
-
-export default handler;
