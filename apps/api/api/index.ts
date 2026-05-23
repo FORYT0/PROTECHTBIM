@@ -203,3 +203,10 @@ async function initialize(): Promise<void> {
 const handler = async (req: Request, res: Response) => {
   await initialize().catch(err => console.error('Init error:', err));
   app(req, res);
+};
+
+export default handler;
+
+};
+
+export default handler;
