@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc",
+    "vercel-build": "echo 'Serverless functions compiled by @vercel/node runtime — no separate build step needed'",
     "start": "node dist/apps/api/src/main.js",
     "test": "jest",
     "typeorm": "typeorm-ts-node-commonjs",
