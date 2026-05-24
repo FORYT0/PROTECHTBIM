@@ -1,7 +1,10 @@
 import jwt from 'jsonwebtoken';
 import { User } from '../entities/User';
 import { UserRepository } from '../repositories/UserRepository';
-import { hashPassword, validatePassword } from '@protecht-bim/shared-utils';
+import bcryptjs from 'bcryptjs';
+const hashPassword = (password: string): Promise<string> => bcryptjs.hash(password, 10);
+const validatePassword = (password: string, hash: string): Promise<boolean> =>
+  bcryptjs.compare(password, hash).catch(() => false);
 
 export interface TokenPayload {
   userId: string;
