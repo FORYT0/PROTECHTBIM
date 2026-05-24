@@ -206,7 +206,3 @@ const handler = async (req: Request, res: Response) => {
 };
 
 export default handler;
-
-};
-
-export default handler;
