@@ -136,28 +136,12 @@ export class CostEntryRepository {
   async findById(id: string): Promise<CostEntry | null> {
     return await this.repository.findOne({
       where: { id },
-      relations: [
-        'project',
-        'workPackage',
-        'costCode',
-        'vendor',
-        'creator',
-        'approver',
-      ],
     });
   }
 
   async findByEntryNumber(entryNumber: string): Promise<CostEntry | null> {
     return await this.repository.findOne({
       where: { entryNumber },
-      relations: [
-        'project',
-        'workPackage',
-        'costCode',
-        'vendor',
-        'creator',
-        'approver',
-      ],
     });
   }
 
@@ -182,13 +166,7 @@ export class CostEntryRepository {
     } = filters;
 
     const queryBuilder = this.repository
-      .createQueryBuilder('cost_entry')
-      .leftJoinAndSelect('cost_entry.project', 'project')
-      .leftJoinAndSelect('cost_entry.workPackage', 'workPackage')
-      .leftJoinAndSelect('cost_entry.costCode', 'costCode')
-      .leftJoinAndSelect('cost_entry.vendor', 'vendor')
-      .leftJoinAndSelect('cost_entry.creator', 'creator')
-      .leftJoinAndSelect('cost_entry.approver', 'approver');
+      .createQueryBuilder('cost_entry');
 
     // Apply filters
     if (projectId) {
