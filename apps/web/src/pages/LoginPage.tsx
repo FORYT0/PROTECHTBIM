@@ -27,9 +27,13 @@ function LoginPage() {
   };
 
   const fillDemo = (role: 'admin' | 'pm' | 'eng') => {
-    const emails = { admin: 'admin@protecht.demo', pm: 'pm@protecht.demo', eng: 'eng@protecht.demo' };
-    setEmail(emails[role]);
-    setPassword('Demo1234!');
+    const creds = {
+      admin: { email: 'admin@protecht.com',    password: 'Admin123!' },
+      pm:    { email: 'pm@protecht.com',        password: 'Demo1234!' },
+      eng:   { email: 'engineer@protecht.com',  password: 'Demo1234!' },
+    };
+    setEmail(creds[role].email);
+    setPassword(creds[role].password);
   };
 
   const features = [
@@ -185,7 +189,7 @@ function LoginPage() {
                 </button>
               ))}
             </div>
-            <p className="text-[10px] text-gray-600 mt-2 text-center">Click a role to pre-fill credentials · Password: Demo1234!</p>
+            <p className="text-[10px] text-gray-600 mt-2 text-center">Click a role to pre-fill credentials · Admin: Admin123! · Others: Demo1234!</p>
           </div>
 
           <p className="text-center text-sm text-gray-600 mt-6">
@@ -193,11 +197,4 @@ function LoginPage() {
             <Link to="/register" className="text-blue-400 hover:text-blue-300 font-medium transition-colors">Create account</Link>
           </p>
 
-          <p className="text-center text-xs text-gray-700 mt-8">© 2026 PROTECHT BIM · Construction Intelligence Platform</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default LoginPage;
+          <p className="te
