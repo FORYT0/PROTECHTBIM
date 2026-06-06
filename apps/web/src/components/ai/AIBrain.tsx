@@ -1,32 +1,84 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Sparkles, Loader2, Bot, User, Trash2, Minimize2, Maximize2, AlertCircle } from 'lucide-react';
+import {
+  X, Send, Sparkles, Loader2, Bot, User, Trash2, Minimize2, Maximize2,
+  AlertCircle, AlertTriangle, BarChart2, FileText, CheckSquare,
+  TrendingDown, ShieldCheck, BarChart3, DollarSign, ClipboardList,
+  Calendar, BookOpen, Circle,
+} from 'lucide-react';
 import { useAIStore } from '../../stores/useAIStore';
 import aiService, { ChatMessage } from '../../services/aiService';
 import ReactMarkdown from 'react-markdown';
 
+/* ─── Quick-action chips ─────────────────────────────────────── */
 const QUICK_PROMPTS = [
-  { label: '⚠️ Risk Analysis', prompt: 'Analyze the main risks on my current project and recommend mitigation strategies.' },
-  { label: '📊 Progress Check', prompt: 'Based on the current project status, what should I focus on this week?' },
-  { label: '📝 Change Order Help', prompt: 'Help me write a justification for a change order due to unforeseen ground conditions.' },
-  { label: '🔍 Snag Priority', prompt: 'How should I prioritize resolving snags? Which categories should I address first?' },
-  { label: '💰 Budget Alert', prompt: 'My project is 70% through time but 85% through budget. What corrective actions should I take?' },
-  { label: '🦺 Safety Checklist', prompt: 'Generate a daily safety inspection checklist for a high-rise construction site in Kenya.' },
+  { Icon: AlertTriangle,  label: 'Risk Analysis',     prompt: 'Analyze the main risks on my current project and recommend mitigation strategies.' },
+  { Icon: BarChart2,      label: 'Progress Check',    prompt: 'Based on the current project status, what should I focus on this week?' },
+  { Icon: FileText,       label: 'Change Order Help', prompt: 'Help me write a justification for a change order due to unforeseen ground conditions.' },
+  { Icon: CheckSquare,    label: 'Snag Priority',     prompt: 'How should I prioritize resolving snags? Which categories should I address first?' },
+  { Icon: TrendingDown,   label: 'Budget Alert',      prompt: 'My project is 70% through time but 85% through budget. What corrective actions should I take?' },
+  { Icon: ShieldCheck,    label: 'Safety Checklist',  prompt: 'Generate a daily safety inspection checklist for a high-rise construction site in Kenya.' },
 ];
 
+/* ─── Welcome capability list ────────────────────────────────── */
+const CAPABILITIES = [
+  { Icon: BarChart3,     text: 'Risk assessment and mitigation strategies' },
+  { Icon: DollarSign,    text: 'Cost control and budget analysis' },
+  { Icon: ClipboardList, text: 'Change order review and justification' },
+  { Icon: CheckSquare,   text: 'Snag prioritisation and defect management' },
+  { Icon: Calendar,      text: 'Schedule analysis and delay management' },
+  { Icon: BookOpen,      text: 'Report writing and documentation' },
+];
+
+/* ─── Status indicator ───────────────────────────────────────── */
+function StatusLabel({ available }: { available: boolean | null }) {
+  if (available === true)
+    return <><Circle className="w-2 h-2 fill-green-400 text-green-400" /><span>Groq · llama-3.3-70b</span></>;
+  if (available === false)
+    return <><Circle className="w-2 h-2 fill-red-400 text-red-400" /><span>Not configured</span></>;
+  return <><Circle className="w-2 h-2 fill-yellow-400 text-yellow-400 animate-pulse" /><span>Checking…</span></>;
+}
+
+/* ─── Welcome message (no emojis) ───────────────────────────── */
+function WelcomeMessage() {
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-gray-200 leading-relaxed">
+        Hi! I'm <strong className="text-white">ARIA</strong>, your AI construction project assistant powered by Groq.
+      </p>
+      <p className="text-[10px] text-gray-500 uppercase tracking-widest font-medium">I can help you with</p>
+      <ul className="space-y-1.5">
+        {CAPABILITIES.map(({ Icon, text }) => (
+          <li key={text} className="flex items-center gap-2 text-sm text-gray-300">
+            <span className="w-5 h-5 rounded-md bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+              <Icon className="w-3 h-3 text-blue-400" />
+            </span>
+            {text}
+          </li>
+        ))}
+      </ul>
+      <p className="text-sm text-gray-400 pt-1">What would you like help with today?</p>
+    </div>
+  );
+}
+
+/* ─── Main component ─────────────────────────────────────────── */
 export function AIBrain() {
   const { isOpen, closeAIBrain } = useAIStore();
-  const [messages, setMessages] = useState<ChatMessage[]>([{
+
+  const WELCOME: ChatMessage = {
     role: 'assistant',
-    content: "Hi! I'm **ARIA**, your AI construction project assistant powered by Groq.\n\nI can help you with:\n- 📊 **Risk assessment** and mitigation strategies\n- 💰 **Cost control** and budget analysis\n- 📋 **Change order** review and justification\n- 🔍 **Snag prioritisation** and defect management\n- 📅 **Schedule analysis** and delay management\n- 📝 **Report writing** and documentation\n\nWhat would you like help with today?",
+    content: '__welcome__',
     timestamp: new Date(),
-  }]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  };
+
+  const [messages, setMessages]       = useState<ChatMessage[]>([WELCOME]);
+  const [input, setInput]             = useState('');
+  const [isLoading, setIsLoading]     = useState(false);
+  const [error, setError]             = useState<string | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef       = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (isOpen && isAvailable === null) {
@@ -53,7 +105,7 @@ export function AIBrain() {
     setIsLoading(true);
 
     try {
-      const history = [...messages, userMsg].slice(-12);
+      const history = [...messages.filter(m => m.content !== '__welcome__'), userMsg].slice(-12);
       const response = await aiService.chat(history);
       setMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date() }]);
     } catch (err) {
@@ -68,20 +120,20 @@ export function AIBrain() {
   };
 
   const clearChat = () => {
-    setMessages([{ role: 'assistant', content: "Chat cleared. How can I help you?", timestamp: new Date() }]);
+    setMessages([{ ...WELCOME, timestamp: new Date() }]);
     setError(null);
   };
 
   if (!isOpen) return null;
 
-  const levelColor = (level?: string) => ({ Low: 'text-green-400', Medium: 'text-yellow-400', High: 'text-orange-400', Critical: 'text-red-400' }[level || ''] || 'text-gray-400');
+  const isInitialState = messages.length === 1 && messages[0].content === '__welcome__';
 
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]" onClick={closeAIBrain} />
       <div className={`fixed right-4 bottom-4 z-50 flex flex-col rounded-2xl border border-gray-800 bg-[#0A0A0A] shadow-2xl shadow-blue-900/20 transition-all duration-300 ${isMinimized ? 'h-14 w-80' : 'h-[680px] w-[420px] max-h-[85vh]'}`}>
 
-        {/* Header */}
+        {/* ── Header ─────────────────────────────────────────────── */}
         <div className="flex items-center justify-between border-b border-gray-800 px-4 py-3 shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-2.5">
             <div className="relative">
@@ -92,13 +144,24 @@ export function AIBrain() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-white tracking-wide">ARIA</h3>
-              <p className="text-[10px] text-gray-500">{isAvailable === true ? '🟢 Groq · llama-3.3-70b' : isAvailable === false ? '🔴 Not configured' : '⏳ Checking...'}</p>
+              <p className="flex items-center gap-1 text-[10px] text-gray-500">
+                <StatusLabel available={isAvailable} />
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={clearChat} className="p-1.5 text-gray-500 hover:text-gray-300 rounded-lg hover:bg-gray-800 transition-colors" title="Clear chat"><Trash2 className="w-3.5 h-3.5" /></button>
-            <button onClick={() => setIsMinimized(!isMinimized)} className="p-1.5 text-gray-500 hover:text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">{isMinimized ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}</button>
-            <button onClick={closeAIBrain} className="p-1.5 text-gray-500 hover:text-red-400 rounded-lg hover:bg-gray-800 transition-colors"><X className="w-3.5 h-3.5" /></button>
+            <button onClick={clearChat} title="Clear chat"
+              className="p-1.5 text-gray-500 hover:text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setIsMinimized(!isMinimized)}
+              className="p-1.5 text-gray-500 hover:text-gray-300 rounded-lg hover:bg-gray-800 transition-colors">
+              {isMinimized ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
+            </button>
+            <button onClick={closeAIBrain}
+              className="p-1.5 text-gray-500 hover:text-red-400 rounded-lg hover:bg-gray-800 transition-colors">
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
@@ -107,11 +170,11 @@ export function AIBrain() {
             {isAvailable === false && (
               <div className="mx-3 mt-3 flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs text-red-400 shrink-0">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                <span>Set <code className="bg-red-900/30 px-1 rounded">GROQ_API_KEY</code> in Railway → Variables to enable ARIA.</span>
+                <span>Set <code className="bg-red-900/30 px-1 rounded">GROQ_API_KEY</code> in Vercel → Environment Variables to enable ARIA.</span>
               </div>
             )}
 
-            {/* Messages */}
+            {/* ── Messages ───────────────────────────────────────── */}
             <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 min-h-0">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex gap-2.5 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
@@ -120,13 +183,21 @@ export function AIBrain() {
                   </div>
                   <div className={`max-w-[82%] rounded-xl px-3.5 py-2.5 text-sm ${msg.role === 'assistant' ? 'bg-[#111] border border-gray-800 text-gray-200' : 'bg-blue-600 text-white'}`}>
                     {msg.role === 'assistant' ? (
-                      <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-blue-300">
-                        <ReactMarkdown>{msg.content}</ReactMarkdown>
-                      </div>
+                      msg.content === '__welcome__' ? (
+                        <WelcomeMessage />
+                      ) : (
+                        <div className="prose prose-invert prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-strong:text-blue-300">
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        </div>
+                      )
                     ) : (
                       <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                     )}
-                    <p className="text-[10px] opacity-30 mt-1.5 text-right">{msg.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    {msg.content !== '__welcome__' && (
+                      <p className="text-[10px] opacity-30 mt-1.5 text-right">
+                        {msg.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -155,29 +226,31 @@ export function AIBrain() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick prompts — shown only at start */}
-            {messages.length <= 1 && (
+            {/* ── Quick actions ───────────────────────────────────── */}
+            {isInitialState && (
               <div className="px-3 pb-2 shrink-0">
                 <p className="text-[10px] text-gray-600 mb-2 font-medium uppercase tracking-widest">Quick Actions</p>
                 <div className="grid grid-cols-2 gap-1.5">
-                  {QUICK_PROMPTS.map(qp => (
-                    <button key={qp.label} onClick={() => sendMessage(qp.prompt)}
+                  {QUICK_PROMPTS.map(({ Icon, label, prompt }) => (
+                    <button key={label} onClick={() => sendMessage(prompt)}
                       disabled={isLoading || isAvailable === false}
-                      className="px-2.5 py-1.5 text-[11px] bg-[#111] border border-gray-800 rounded-lg text-gray-400 hover:text-blue-400 hover:border-blue-500/40 hover:bg-blue-500/5 transition-all text-left disabled:opacity-40 truncate">
-                      {qp.label}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] bg-[#111] border border-gray-800 rounded-lg text-gray-400 hover:text-blue-400 hover:border-blue-500/40 hover:bg-blue-500/5 transition-all disabled:opacity-40">
+                      <Icon className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{label}</span>
                     </button>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Input */}
+            {/* ── Input ──────────────────────────────────────────── */}
             <div className="border-t border-gray-800 p-3 shrink-0">
               <div className="flex items-end gap-2 bg-[#111] border border-gray-700 rounded-xl px-3 py-2.5 focus-within:border-blue-500/50 transition-colors">
                 <textarea ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
-                  placeholder={isAvailable === false ? 'ARIA not configured...' : 'Ask ARIA anything about your project...'}
+                  placeholder={isAvailable === false ? 'ARIA not configured…' : 'Ask ARIA anything about your project…'}
                   disabled={isLoading || isAvailable === false}
-                  rows={1} className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 resize-none focus:outline-none min-h-[20px] max-h-[100px] disabled:opacity-50 leading-relaxed"
+                  rows={1}
+                  className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 resize-none focus:outline-none min-h-[20px] max-h-[100px] disabled:opacity-50 leading-relaxed"
                   onInput={e => { const t = e.target as HTMLTextAreaElement; t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 100) + 'px'; }} />
                 <button onClick={() => sendMessage()} disabled={!input.trim() || isLoading || isAvailable === false}
                   className="w-8 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 shadow-lg shadow-blue-500/20">
