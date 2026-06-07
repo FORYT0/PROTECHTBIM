@@ -30,6 +30,10 @@ export const COLORS = {
   redAlpha:    'rgba(248,113,113,0.15)',
   purple:      '#A78BFA',
   purpleAlpha: 'rgba(167,139,250,0.15)',
+  orange:      '#F97316',
+  orangeAlpha: 'rgba(249,115,22,0.15)',
+  teal:        '#2DD4BF',
+  tealAlpha:   'rgba(45,212,191,0.15)',
 
   // Status badges
   statusActive:    '#4ADE80',
